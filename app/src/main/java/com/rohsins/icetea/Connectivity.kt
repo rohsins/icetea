@@ -1,53 +1,100 @@
 package com.rohsins.icetea
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.util.Log
 import org.eclipse.paho.client.mqttv3.*
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
-import kotlin.reflect.KCallable
+
+private val mqttURI = "tcp://hardware.wscada.net:1883";
+private val mqttClientId = "rohsisnKotlin";
+private val mqttUserName = "rtshardware";
+private val mqttPassword = "rtshardware";
+private val udi = "TestSequence1801";
+private val subscribeTopic = "RTSR&D/baanvak/sub/" + udi;
+private val publishTopic = "RTSR&D/baanvak/pub/" + udi;
+private var mqttConfigured = false;
 
 class Connectivity {
-    val brokerAddress = "tcp://hardware.wscada.net:1883";
-    val clientId = "rohsinsKotlin";
-    var persistence : MemoryPersistence ?= null;
-    var connectOption : MqttConnectOptions ?= null;
-    var mqttClient : MqttClient?= null;
+    private val mqtt = false;
 
-    constructor() {
-        try {
-            Log.d("VTAG", "starting");
-            persistence = MemoryPersistence();
-            connectOption = MqttConnectOptions();
+    companion object {
+        lateinit private var mqttClient : MqttClient;
 
-            connectOption!!.userName = "rtshardware";
-            connectOption!!.password = "rtshardware".toCharArray();
-//        connectOption.isCleanSession = false;
-//        connectOption.isAutomaticReconnect = true;
+        fun MqttPublish(mqttMessage: MqttMessage) {
+            if (mqttConfigured) {
+                mqttClient.publish(publishTopic, mqttMessage);
+            }
+        }
 
-            mqttClient = MqttClient(brokerAddress, clientId, persistence);
-            mqttClient!!.setCallback(MqttCallbackRoutine());
-            mqttClient!!.connect(connectOption);
-        } catch (e : Exception) {
-            e.printStackTrace();
+        fun MqttPublish(mqttmessage: ByteArray) {
+            if (mqttConfigured) {
+                mqttClient.publish(publishTopic, mqttmessage, 2, false);
+            }
+        }
+
+        fun MqttSubscribe(topic: String) {
+            if (mqttConfigured) {
+                mqttClient.subscribe(topic);
+            }
         }
     }
+
+    fun ConfigureAndConnectMqtt() : Int {
+        if (!mqttConfigured) {
+            mqttConfigured = true;
+
+            val brokerAddress = mqttURI;
+            val clientId = mqttClientId;
+            val persistence = MemoryPersistence();
+            val connectOption = MqttConnectOptions();
+
+            connectOption.userName = mqttUserName;
+            connectOption.password = mqttPassword.toCharArray();
+            connectOption.isCleanSession = false;
+            connectOption.isAutomaticReconnect = true;
+            connectOption.keepAliveInterval = 2000;
+            connectOption.connectionTimeout = 1000;
+
+            mqttClient = MqttClient(brokerAddress, clientId, persistence);
+            mqttClient.setCallback(object: MqttCallbackExtended {
+                override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+                    Log.d("VTAG", "connection complete");
+                }
+
+                override fun messageArrived(topic: String?, message: MqttMessage?) {
+                    Log.d("VTAG", message.toString());
+                    MqttPublish("what the hell is this".toByteArray());
+                }
+
+                override fun connectionLost(cause: Throwable?) {
+                    Log.d("VTAG", "connection has been lost. WTF!!!");
+                    mqttClient.disconnectForcibly(100, 1000, false);
+                }
+
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
+
+                }
+
+            });
+
+            try {
+                mqttClient.connect(connectOption);
+            } catch (e: MqttException) {
+                e.printStackTrace();
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+//    fun startMonitoring() {
+//        val connectivityMonitor= context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager;
+//        val activeNetwork: NetworkInfo? = connectivityMonitor.activeNetworkInfo;
+//        val isConnected: Boolean = activeNetwork?.isConnected == true
+//    }
+
 }
 
-class MqttCallbackRoutine : MqttCallbackExtended {
-    override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-        Log.d("VTAG", "connected");
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun messageArrived(topic: String?, message: MqttMessage?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun connectionLost(cause: Throwable?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun deliveryComplete(token: IMqttDeliveryToken?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-}
