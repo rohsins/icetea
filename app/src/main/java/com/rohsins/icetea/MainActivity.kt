@@ -12,6 +12,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val connectivity = Connectivity();
+
         val gridView: GridView = findViewById(R.id.gridView);
         gridView.adapter = ImageAdapter(this);
 
