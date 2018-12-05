@@ -75,6 +75,7 @@ class Connectivity : BroadcastReceiver() {
             mqttClient.setCallback(object: MqttCallbackExtended {
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
                     Log.d("VTAG", "connection complete");
+                    MqttSubscribe(subscribeTopic);
                 }
 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
