@@ -9,14 +9,11 @@ import android.util.Log
 
 class BackgroundService: Service() {
     val connectivity = Connectivity();
-    val error = connectivity.ConfigureAndConnectMqtt();
-
-    override fun onCreate() {
-        Log.d("VTAG", "starting service");
-        this.registerReceiver(connectivity, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-    }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int) : Int {
+        Log.d("VTAG", "starting service");
+        connectivity.ConfigureAndConnectMqtt();
+        this.registerReceiver(connectivity, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         return START_STICKY;
     }
 

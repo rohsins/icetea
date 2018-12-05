@@ -20,26 +20,30 @@ private var mqttConfigured = false;
 
 class Connectivity : BroadcastReceiver() {
     private val mqtt = false;
+    private var NetworkStatus = 0;
+    private var NetworkPrevStatus = 3;
     private val connectOption = MqttConnectOptions();
 
     companion object {
         private lateinit var mqttClient : MqttClient;
 
         fun MqttPublish(mqttMessage: MqttMessage) {
-            if (mqttConfigured && mqttClient.isConnected) {
-                mqttClient.publish(publishTopic, mqttMessage);
-            }
+            Thread(PublishRunnable(mqttMessage)).start();
         }
 
-        fun MqttPublish(mqttmessage: ByteArray) {
-            if (mqttConfigured && mqttClient.isConnected) {
-                mqttClient.publish(publishTopic, mqttmessage, 2, false);
-            }
+        fun MqttPublish(mqttMessage: ByteArray) {
+            Thread(PublishRunnable(mqttMessage)).start();
         }
 
         fun MqttSubscribe(topic: String) {
-            if (mqttConfigured && mqttClient.isConnected) {
-                mqttClient.subscribe(topic);
+            try {
+                if (mqttConfigured && mqttClient.isConnected) {
+                    mqttClient.subscribe(topic);
+                } else {
+                    Log.d("VTAG", "no network connection");
+                }
+            } catch (e: MqttException) {
+                e.printStackTrace();
             }
         }
     }
@@ -64,8 +68,8 @@ class Connectivity : BroadcastReceiver() {
             connectOption.password = mqttPassword.toCharArray();
             connectOption.isCleanSession = false;
             connectOption.isAutomaticReconnect = true;
-            connectOption.keepAliveInterval = 2000;
-            connectOption.connectionTimeout = 1000;
+            connectOption.keepAliveInterval = 10;
+            connectOption.connectionTimeout = 10;
 
             mqttClient = MqttClient(brokerAddress, clientId, persistence);
             mqttClient.setCallback(object: MqttCallbackExtended {
@@ -87,7 +91,6 @@ class Connectivity : BroadcastReceiver() {
 
                 }
             });
-            MqttConnect();
         }
     }
 
@@ -96,22 +99,70 @@ class Connectivity : BroadcastReceiver() {
         val networkInfo: NetworkInfo? = conn.activeNetworkInfo
 
         if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
+            NetworkStatus = 1;
             Log.d("VTAG", "Wifi Connected");
         } else if (networkInfo?.type == ConnectivityManager.TYPE_MOBILE) {
+            NetworkStatus = 2;
             Log.d("VTAG", "Cellular Connected");
         } else {
+            NetworkStatus = 3;
             Log.d("VTAG", "No Network Connection");
+        }
+        if (NetworkStatus != NetworkPrevStatus) {
+            NetworkPrevStatus = NetworkStatus;
+            if ((NetworkStatus == 1 || NetworkStatus == 2) && !mqttClient.isConnected) {
+                Log.d("VTAG", "initializing connection sequence");
+                MqttConnect();
+            } else if (NetworkStatus == 3) {
+                Log.d("VTAG", "initializing disconnect sequence");
+                MqttDisconnect();
+            }
         }
     }
 
-    inner class ServiceRunnable(var flag: Boolean): Runnable {
+    private inner class ServiceRunnable(var flag: Boolean): Runnable {
         override fun run() {
             try {
-                if (flag) {
+                if (flag && !mqttClient.isConnected) {
                     mqttClient.connect(connectOption);
-                } else {
+                } else if (!flag && mqttClient.isConnected) {
                     mqttClient.disconnect();
                     Log.d("VTAG", "disconnected");
+                } else if (!flag && !mqttClient.isConnected) {
+                    mqttClient.disconnectForcibly(1, 1, false);
+                    Log.d("VTAG", "forcefully disconnecting");
+                }
+            } catch (e: MqttException) {
+                Log.d("VTAG", "okay cool whatever the error is $e");
+                e.printStackTrace();
+                if (NetworkStatus == 1 || NetworkStatus == 2) {
+                    Log.d("VTAG", "Running again");
+                    mqttClient.disconnectForcibly(1, 1, false);
+                    this.run();
+                }
+            }
+        }
+    }
+
+    private class PublishRunnable: Runnable {
+        var mqttPayload = MqttMessage();
+
+        constructor(mqttMessage: MqttMessage) {
+            mqttPayload = mqttMessage;
+        }
+
+        constructor(mqttMessage: ByteArray)  {
+            mqttPayload.payload = mqttMessage;
+            mqttPayload.qos = 2;
+            mqttPayload.isRetained = false;
+        }
+
+        override fun run() {
+            try {
+                if (mqttConfigured && mqttClient.isConnected) {
+                    mqttClient.publish(publishTopic, mqttPayload);
+                } else {
+                    Log.d("VTAG", "Publish: no network connection");
                 }
             } catch (e: MqttException) {
                 e.printStackTrace();
