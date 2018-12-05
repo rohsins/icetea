@@ -27,4 +27,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy();
+        Intent(this, BackgroundService::class.java).also {intent ->
+            stopService(intent);
+        }
+    }
 }

@@ -1,6 +1,8 @@
 package com.rohsins.icetea
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.util.Log
@@ -16,39 +18,47 @@ private val subscribeTopic = "RTSR&D/baanvak/sub/" + udi;
 private val publishTopic = "RTSR&D/baanvak/pub/" + udi;
 private var mqttConfigured = false;
 
-class Connectivity {
+class Connectivity : BroadcastReceiver() {
     private val mqtt = false;
+    private val connectOption = MqttConnectOptions();
 
     companion object {
-        lateinit private var mqttClient : MqttClient;
+        private lateinit var mqttClient : MqttClient;
 
         fun MqttPublish(mqttMessage: MqttMessage) {
-            if (mqttConfigured) {
+            if (mqttConfigured && mqttClient.isConnected) {
                 mqttClient.publish(publishTopic, mqttMessage);
             }
         }
 
         fun MqttPublish(mqttmessage: ByteArray) {
-            if (mqttConfigured) {
+            if (mqttConfigured && mqttClient.isConnected) {
                 mqttClient.publish(publishTopic, mqttmessage, 2, false);
             }
         }
 
         fun MqttSubscribe(topic: String) {
-            if (mqttConfigured) {
+            if (mqttConfigured && mqttClient.isConnected) {
                 mqttClient.subscribe(topic);
             }
         }
     }
 
-    fun ConfigureAndConnectMqtt() : Int {
+    fun MqttConnect() {
+        Thread(ServiceRunnable(true)).start() //connect mqtt
+    }
+
+    fun MqttDisconnect() {
+        Thread(ServiceRunnable(false)).start() //disconnect mqtt
+    }
+
+    fun ConfigureAndConnectMqtt() {
         if (!mqttConfigured) {
             mqttConfigured = true;
 
             val brokerAddress = mqttURI;
             val clientId = mqttClientId;
             val persistence = MemoryPersistence();
-            val connectOption = MqttConnectOptions();
 
             connectOption.userName = mqttUserName;
             connectOption.password = mqttPassword.toCharArray();
@@ -70,31 +80,42 @@ class Connectivity {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "connection has been lost. WTF!!!");
-                    mqttClient.disconnectForcibly(100, 1000, false);
+                    //mqttClient.disconnectForcibly(100, 1000, false);
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
 
                 }
-
             });
-
-            try {
-                mqttClient.connect(connectOption);
-            } catch (e: MqttException) {
-                e.printStackTrace();
-                return -1;
-            }
+            MqttConnect();
         }
-
-        return 0;
     }
 
-//    fun startMonitoring() {
-//        val connectivityMonitor= context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager;
-//        val activeNetwork: NetworkInfo? = connectivityMonitor.activeNetworkInfo;
-//        val isConnected: Boolean = activeNetwork?.isConnected == true
-//    }
+    override fun onReceive(context: Context?, intent: Intent?) {
+        val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo: NetworkInfo? = conn.activeNetworkInfo
 
+        if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
+            Log.d("VTAG", "Wifi Connected");
+        } else if (networkInfo?.type == ConnectivityManager.TYPE_MOBILE) {
+            Log.d("VTAG", "Cellular Connected");
+        } else {
+            Log.d("VTAG", "No Network Connection");
+        }
+    }
+
+    inner class ServiceRunnable(var flag: Boolean): Runnable {
+        override fun run() {
+            try {
+                if (flag) {
+                    mqttClient.connect(connectOption);
+                } else {
+                    mqttClient.disconnect();
+                    Log.d("VTAG", "disconnected");
+                }
+            } catch (e: MqttException) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
-
