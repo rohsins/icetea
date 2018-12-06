@@ -9,9 +9,11 @@ import android.os.PowerManager
 import android.util.Log
 import org.eclipse.paho.client.mqttv3.*
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
+import java.lang.Exception
+import java.net.InetAddress
 
 private val mqttURI = "tcp://hardware.wscada.net:1883";
-private val mqttClientId = "rohsisnKotlin";
+private val mqttClientId = "rohsinsKotlin";
 private val mqttUserName = "rtshardware";
 private val mqttPassword = "rtshardware";
 private val udi = "TestSequence1801";
@@ -67,16 +69,19 @@ class Connectivity : BroadcastReceiver() {
 
             connectOption.userName = mqttUserName;
             connectOption.password = mqttPassword.toCharArray();
-            connectOption.isCleanSession = false;
-            connectOption.isAutomaticReconnect = true;
+            connectOption.isCleanSession = false; // false important
+            connectOption.isAutomaticReconnect = false; // false important
             connectOption.keepAliveInterval = 10;
-            connectOption.connectionTimeout = 10;
+            connectOption.connectionTimeout = 2;
+            connectOption.maxInflight = 100;
 
             mqttClient = MqttClient(brokerAddress, clientId, persistence);
             mqttClient.setCallback(object: MqttCallbackExtended {
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                    Log.d("VTAG", "connection complete");
-                    MqttSubscribe(subscribeTopic);
+                    Log.d("VTAG", "connection complete $reconnect");
+                    if (!reconnect) {
+                        MqttSubscribe(subscribeTopic);
+                    }
                 }
 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -86,7 +91,7 @@ class Connectivity : BroadcastReceiver() {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "connection has been lost. WTF!!!");
-                    //mqttClient.disconnectForcibly(100, 1000, false);
+                    MqttConnect();
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -114,7 +119,6 @@ class Connectivity : BroadcastReceiver() {
             Log.d("VTAG", "No Network Connection");
         }
         if (NetworkStatus != NetworkPrevStatus) {
-            NetworkPrevStatus = NetworkStatus;
             if ((NetworkStatus == 1 || NetworkStatus == 2) && !mqttClient.isConnected) {
                 Log.d("VTAG", "initializing connection sequence");
                 MqttConnect();
@@ -128,28 +132,59 @@ class Connectivity : BroadcastReceiver() {
                     wakeLock.release();
                 }
             }
+            NetworkPrevStatus = NetworkStatus;
         }
     }
 
     private inner class ServiceRunnable(var flag: Boolean): Runnable {
         override fun run() {
             try {
-                if (flag && !mqttClient.isConnected) {
+                if (flag && !mqttClient.isConnected && (NetworkStatus == 1 || NetworkStatus == 2)) {
+                    Log.d("VTAG", "connecting thread: $NetworkPrevStatus, $NetworkStatus");
+                    if (NetworkPrevStatus == 1 || NetworkPrevStatus == 2) {
+                        mqttClient.disconnectForcibly(1, 1, false);
+                        mqttClient.close(true);
+                        mqttConfigured = false;
+                    }
+                    ConfigureAndConnectMqtt();
                     mqttClient.connect(connectOption);
                 } else if (!flag && mqttClient.isConnected) {
+                    mqttClient.unsubscribe(subscribeTopic);
                     mqttClient.disconnect();
-                    Log.d("VTAG", "disconnected");
+                    mqttClient.close(true);
+                    mqttConfigured = false;
+                    Log.d("VTAG", "disconnected thread");
                 } else if (!flag && !mqttClient.isConnected) {
                     mqttClient.disconnectForcibly(1, 1, false);
-                    Log.d("VTAG", "forcefully disconnecting");
+                    mqttClient.close(true);
+                    mqttConfigured = false;
+                    Log.d("VTAG", "forcefully disconnecting thread");
                 }
             } catch (e: MqttException) {
-                Log.d("VTAG", "okay cool whatever the error is $e");
+                Log.d("VTAG", "okay cool thread whatever the error is $e");
                 e.printStackTrace();
-                if (NetworkStatus == 1 || NetworkStatus == 2) {
-                    Log.d("VTAG", "Running again");
-                    mqttClient.disconnectForcibly(1, 1, false);
-                    this.run();
+                try {
+                    if (e.reasonCode == 0) {
+                        if (NetworkStatus == 1 || NetworkStatus == 2) {
+                            Log.d("VTAG", "Running again thread");
+                            Log.d("VTAG", "address: ${InetAddress.getByName("hardware.wscada.net").hostAddress}");
+//                            if (InetAddress.getByName("hardware.wscada.net").hostAddress.equals("10.0.0.1")) {
+//                                Log.d("VTAG", "No fucking Internet connection, Killing Service");
+//                            } else {
+                                Thread(ServiceRunnable(true)).start();
+//                            }
+                            Log.d("VTAG", "exiting this thing: ${e.reasonCode}");
+                        }
+                    } else if (e.reasonCode == 32110) {
+                        // Connect already in progress
+                        Thread(ServiceRunnable(true)).start();
+                        Log.d("VTAG", "handling connection in progress");
+                    } else {
+                        Log.d("VTAG", "error cause is : ${e.reasonCode}");
+
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace();
                 }
             }
         }
