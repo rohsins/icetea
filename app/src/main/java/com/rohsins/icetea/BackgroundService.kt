@@ -11,18 +11,18 @@ import android.util.Log
 
 class BackgroundService: Service() {
     val connectivity = Connectivity();
-    var wakeLock: PowerManager.WakeLock? = null;
+//    var wakeLock: PowerManager.WakeLock? = null;
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int) : Int {
         Log.d("VTAG", "starting service");
         connectivity.ConfigureAndConnectMqtt();
         this.registerReceiver(connectivity, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-        wakeLock =
-            (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
-                    acquire()
-                }
-            };
+//        wakeLock =
+//            (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+//                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+//                    acquire()
+//                }
+//            };
         return START_STICKY;
     }
 
@@ -34,6 +34,6 @@ class BackgroundService: Service() {
         Log.d("VTAG", "killing service");
         connectivity.MqttDisconnect()
         this.unregisterReceiver(connectivity);
-        wakeLock!!.release();
+//        wakeLock!!.release();
     }
 }

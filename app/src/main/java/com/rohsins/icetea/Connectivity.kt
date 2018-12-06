@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.os.PowerManager
 import android.util.Log
 import org.eclipse.paho.client.mqttv3.*
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
@@ -98,6 +99,9 @@ class Connectivity : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkInfo: NetworkInfo? = conn.activeNetworkInfo
+        val wakeLock: PowerManager.WakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock");
+        };
 
         if (networkInfo?.type == ConnectivityManager.TYPE_WIFI) {
             NetworkStatus = 1;
@@ -114,9 +118,15 @@ class Connectivity : BroadcastReceiver() {
             if ((NetworkStatus == 1 || NetworkStatus == 2) && !mqttClient.isConnected) {
                 Log.d("VTAG", "initializing connection sequence");
                 MqttConnect();
+                if (!wakeLock.isHeld) {
+                    wakeLock.acquire(0);
+                }
             } else if (NetworkStatus == 3) {
                 Log.d("VTAG", "initializing disconnect sequence");
                 MqttDisconnect();
+                if (wakeLock.isHeld) {
+                    wakeLock.release();
+                }
             }
         }
     }
