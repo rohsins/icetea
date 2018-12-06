@@ -5,15 +5,19 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.os.Handler
 import android.os.PowerManager
 import android.util.Log
 import org.eclipse.paho.client.mqttv3.*
+import org.eclipse.paho.client.mqttv3.internal.wire.MqttUnsubscribe
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.lang.Exception
+import java.net.ConnectException
 import java.net.InetAddress
+import java.net.Socket
 
 private val mqttURI = "tcp://hardware.wscada.net:1883";
-private val mqttClientId = "rohsinsKotlin";
+private val mqttClientId = "rohsinsKotlinJ";
 private val mqttUserName = "rtshardware";
 private val mqttPassword = "rtshardware";
 private val udi = "TestSequence1801";
@@ -22,7 +26,7 @@ private val publishTopic = "RTSR&D/baanvak/pub/" + udi;
 private var mqttConfigured = false;
 
 class Connectivity : BroadcastReceiver() {
-    private val mqtt = false;
+    private var mqtt = false;
     private var NetworkStatus = 0;
     private var NetworkPrevStatus = 3;
     private val connectOption = MqttConnectOptions();
@@ -42,6 +46,18 @@ class Connectivity : BroadcastReceiver() {
             try {
                 if (mqttConfigured && mqttClient.isConnected) {
                     mqttClient.subscribe(topic);
+                } else {
+                    Log.d("VTAG", "no network connection");
+                }
+            } catch (e: MqttException) {
+                e.printStackTrace();
+            }
+        }
+
+        fun MqttUnsubscribe(topic: String) {
+            try {
+                if (mqttConfigured && mqttClient.isConnected) {
+                    mqttClient.unsubscribe(topic);
                 } else {
                     Log.d("VTAG", "no network connection");
                 }
@@ -72,14 +88,16 @@ class Connectivity : BroadcastReceiver() {
             connectOption.isCleanSession = false; // false important
             connectOption.isAutomaticReconnect = false; // false important
             connectOption.keepAliveInterval = 10;
-            connectOption.connectionTimeout = 2;
+            connectOption.connectionTimeout = 5;
             connectOption.maxInflight = 100;
 
             mqttClient = MqttClient(brokerAddress, clientId, persistence);
             mqttClient.setCallback(object: MqttCallbackExtended {
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
                     Log.d("VTAG", "connection complete $reconnect");
+                    mqtt = true;
                     if (!reconnect) {
+                        MqttUnsubscribe(subscribeTopic);
                         MqttSubscribe(subscribeTopic);
                     }
                 }
@@ -91,7 +109,7 @@ class Connectivity : BroadcastReceiver() {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "connection has been lost. WTF!!!");
-                    MqttConnect();
+                    Handler().postDelayed({MqttConnect()}, 1000);
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -141,7 +159,9 @@ class Connectivity : BroadcastReceiver() {
             try {
                 if (flag && !mqttClient.isConnected && (NetworkStatus == 1 || NetworkStatus == 2)) {
                     Log.d("VTAG", "connecting thread: $NetworkPrevStatus, $NetworkStatus");
-                    if (NetworkPrevStatus == 1 || NetworkPrevStatus == 2) {
+                    var socket = Socket("hardware.wscada.net", 1883);
+                    socket.close();
+                    if ((NetworkPrevStatus == 1 || NetworkPrevStatus == 2) && mqtt == true) {
                         mqttClient.disconnectForcibly(1, 1, false);
                         mqttClient.close(true);
                         mqttConfigured = false;
@@ -180,12 +200,20 @@ class Connectivity : BroadcastReceiver() {
                         Thread(ServiceRunnable(true)).start();
                         Log.d("VTAG", "handling connection in progress");
                     } else {
+                        Thread(ServiceRunnable(true)).start(); // 32103 // java.net.ConnectException
                         Log.d("VTAG", "error cause is : ${e.reasonCode}");
 
                     }
                 } catch (e: Exception) {
                     e.printStackTrace();
                 }
+            } catch (e: ConnectException) {
+                Log.d("VTAG", "No Internet Connection");
+                e.printStackTrace();
+                Thread(ServiceRunnable(true)).start();
+            } catch (e: Exception) {
+                Log.d("VTAG", "Unknown Error");
+                e.printStackTrace();
             }
         }
     }

@@ -4,15 +4,21 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.os.*
 import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
 import android.support.v4.app.NotificationCompat
 import android.util.Log
 import android.widget.AdapterView
 import android.widget.GridView
 import android.widget.Toast
 import java.net.InetAddress
+import java.net.InetSocketAddress
+import android.net.Proxy.getHost
+import android.R.attr.host
+import android.net.Proxy.getPort
+import java.net.Socket
+import java.net.SocketAddress
+
 
 class MainActivity : AppCompatActivity() {
     val channelId = "ForegroundService";
@@ -42,6 +48,8 @@ class MainActivity : AppCompatActivity() {
 //                startService(intent);
 //            }
         }
+
+//        Thread(LooperThread()).start();
 
         val gridView: GridView = findViewById(R.id.gridView);
         gridView.adapter = ImageAdapter(this);
@@ -75,4 +83,23 @@ class MainActivity : AppCompatActivity() {
             stopService(intent);
         }
     }
+
+//    var handler = Handler();
+//
+//    internal inner class LooperThread : Runnable {
+//        override fun run() {
+//            try {
+//                var socket = Socket("hardware.wscada.net", 1883);
+//                socket.close();
+//                Log.d("VTAG", "Internet is Alive");
+//                Log.d("VTAG", "so: ${socket.inetAddress}");
+//            } catch (ex: Exception) {
+//                Log.d("VTAG", "Internet is Dead");
+//                Log.d("VTAG", "Esdfsad: $ex");
+//            }
+//
+//
+//            handler.postDelayed({Thread(LooperThread()).start()}, 1000)
+//        }
+//    }
 }
