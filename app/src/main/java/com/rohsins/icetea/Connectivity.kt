@@ -15,10 +15,10 @@ import java.net.InetAddress
 import java.net.Socket
 
 private val mqttURI = "tcp://hardware.wscada.net:1883";
-private val mqttClientId = "rohsinsKotlinJ2";
+private val mqttClientId = "rohsinsKotlinJ3";
 private val mqttUserName = "rtshardware";
 private val mqttPassword = "rtshardware";
-private val udi = "TestSequence1803";
+private val udi = "TestSequence1821";
 private val subscribeTopic = "RTSR&D/baanvak/sub/" + udi;
 private val publishTopic = "RTSR&D/baanvak/pub/" + udi;
 private var mqttConfigured = false;
@@ -43,7 +43,7 @@ class Connectivity : BroadcastReceiver() {
         fun MqttSubscribe(topic: String) {
             try {
                 if (mqttConfigured && mqttClient.isConnected) {
-                    mqttClient.subscribe(topic);
+                    mqttClient.subscribe(topic, 2);
                 } else {
                     Log.d("VTAG", "no network connection");
                 }
