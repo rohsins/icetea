@@ -5,11 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
-import android.os.Handler
 import android.os.PowerManager
 import android.util.Log
 import org.eclipse.paho.client.mqttv3.*
-import org.eclipse.paho.client.mqttv3.internal.wire.MqttUnsubscribe
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.lang.Exception
 import java.net.ConnectException
@@ -109,7 +107,7 @@ class Connectivity : BroadcastReceiver() {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "connection has been lost. WTF!!!");
-                    Handler().postDelayed({MqttConnect()}, 1000);
+                    MqttConnect();
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
