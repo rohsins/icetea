@@ -15,7 +15,7 @@ import java.net.InetAddress
 import java.net.Socket
 
 private val mqttURI = "tcp://hardware.wscada.net:1883";
-private val mqttClientId = "rohsinsKotlinJ1";
+private val mqttClientId = "rohsinsKotlinJ2";
 private val mqttUserName = "rtshardware";
 private val mqttPassword = "rtshardware";
 private val udi = "TestSequence1803";

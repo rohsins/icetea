@@ -36,7 +36,7 @@ class BackgroundService: Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String {
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
 //        channel.lightColor = Color.BLUE;
 //        channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE;
         serviceNotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
