@@ -15,10 +15,10 @@ import java.net.InetAddress
 import java.net.Socket
 
 private val mqttURI = "tcp://hardware.wscada.net:1883";
-private val mqttClientId = "rohsinsKotlinJ";
+private val mqttClientId = "rohsinsKotlinJ1";
 private val mqttUserName = "rtshardware";
 private val mqttPassword = "rtshardware";
-private val udi = "TestSequence1801";
+private val udi = "TestSequence1803";
 private val subscribeTopic = "RTSR&D/baanvak/sub/" + udi;
 private val publishTopic = "RTSR&D/baanvak/pub/" + udi;
 private var mqttConfigured = false;
