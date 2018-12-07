@@ -8,6 +8,11 @@ import android.widget.GridView
 import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        var serviceRunning = false;
+        var killServiceFlag = false;
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -25,7 +30,9 @@ class MainActivity : AppCompatActivity() {
 
         gridView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             Toast.makeText(this, "$position", Toast.LENGTH_SHORT).show();
-            if (position == 0 ) {
+            if (position == 0 && !serviceRunning) {
+                killServiceFlag = false;
+                serviceRunning = true;
                 Intent(this, BackgroundService::class.java).also { intent ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(intent);
@@ -38,7 +45,8 @@ class MainActivity : AppCompatActivity() {
             if (position == 1) {
                 Connectivity.mqttPublish("reply: what is up".toByteArray());
             }
-            if (position == 20) {
+            if (position == 20 && serviceRunning) {
+                killServiceFlag = true;
                 Intent(this, BackgroundService::class.java).also {intent ->
                     stopService(intent);
                 }

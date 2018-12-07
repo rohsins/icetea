@@ -65,17 +65,23 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
-    private fun mqttConnect() {
+    fun mqttConnect() {
         Thread(ServiceRunnable(true)).start() //connect mqtt
     }
 
-    private fun mqttDisconnect() {
+    fun mqttDisconnect() {
         Thread(ServiceRunnable(false)).start() //disconnect mqtt
     }
 
     fun mqttClose() {
-        mqttDisconnect()
-        mqttClient.close(true);
+        if (mqttClient.isConnected) {
+            mqttUnsubscribe(subscribeTopic);
+            mqttClient.disconnect()
+            mqttClient.close();
+        } else {
+            mqttClient.disconnectForcibly(1, 1, false);
+            mqttClient.close(true);
+        }
     }
 
     fun configureAndConnectMqtt() {
@@ -199,6 +205,11 @@ class Connectivity : BroadcastReceiver() {
                         // Connect already in progress
                         Thread(ServiceRunnable(true)).start()
                         Log.d("VTAG", "handling connection in progress")
+                    } else if (e.reasonCode == 5) {
+                        mqttClient.close()
+                        mqttConfigured = false
+                        configureAndConnectMqtt()
+                        Thread(ServiceRunnable(true)).start()
                     } else {
                         Thread(ServiceRunnable(true)).start() // 32103 // java.net.ConnectException
                         Log.d("VTAG", "error cause is : ${e.reasonCode}")

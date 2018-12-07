@@ -58,7 +58,12 @@ class BackgroundService: Service() {
 
     override fun onDestroy() {
         Log.d("VTAG", "killing service")
-        connectivity.mqttClose()
+        connectivity.mqttDisconnect()
         this.unregisterReceiver(connectivity)
+        if (!MainActivity.killServiceFlag) {
+            startForeground(291, serviceNotificationBuilder!!.build())
+        } else {
+            MainActivity.serviceRunning = false;
+        }
     }
 }
