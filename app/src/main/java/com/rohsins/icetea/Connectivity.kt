@@ -36,7 +36,6 @@ class Connectivity : BroadcastReceiver() {
             Thread(PublishRunnable(mqttMessage)).start()
         }
 
-        @JvmStatic
         fun mqttPublish(mqttMessage: ByteArray) {
             Thread(PublishRunnable(mqttMessage)).start()
         }
@@ -74,7 +73,12 @@ class Connectivity : BroadcastReceiver() {
         Thread(ServiceRunnable(false)).start() //disconnect mqtt
     }
 
-    private fun ConfigureAndConnectMqtt() {
+    fun mqttClose() {
+        mqttDisconnect()
+        mqttClient.close(true);
+    }
+
+    fun configureAndConnectMqtt() {
         if (!mqttConfigured) {
             mqttConfigured = true
 
@@ -167,7 +171,7 @@ class Connectivity : BroadcastReceiver() {
 //                        mqttClient.close(true);
 //                        mqttConfigured = false;
                     }
-//                    ConfigureAndConnectMqtt();
+//                    configureAndConnectMqtt();
                     mqttClient.connect(connectOption)
                 } else if (!flag && mqttClient.isConnected) {
                     mqttClient.unsubscribe(subscribeTopic)
