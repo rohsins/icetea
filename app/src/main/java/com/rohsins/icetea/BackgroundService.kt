@@ -60,10 +60,14 @@ class BackgroundService: Service() {
         Log.d("VTAG", "killing service")
         connectivity.mqttDisconnect()
         this.unregisterReceiver(connectivity)
-        if (!MainActivity.killServiceFlag) {
-            startForeground(291, serviceNotificationBuilder!!.build())
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(rootIntent);
         } else {
-            MainActivity.serviceRunning = false;
+            startService(rootIntent);
         }
     }
 }
