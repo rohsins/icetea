@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show();
             }
             if (position == 1) {
-                Connectivity.MqttPublish("reply: what is up".toByteArray());
+                Connectivity.mqttPublish("reply: what is up".toByteArray());
             }
             if (position == 20) {
                 Intent(this, BackgroundService::class.java).also {intent ->
