@@ -9,13 +9,12 @@ import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     companion object {
-        var serviceRunning = false;
-        var killServiceFlag = false;
+        var serviceRunning = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
 //        Intent(this, BackgroundService::class.java).also { intent ->
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -25,41 +24,32 @@ class MainActivity : AppCompatActivity() {
 //            }
 //        }
 
-        val gridView: GridView = findViewById(R.id.gridView);
-        gridView.adapter = ImageAdapter(this);
+        val gridView: GridView = findViewById(R.id.gridView)
+        gridView.adapter = ImageAdapter(this)
 
         gridView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
-            Toast.makeText(this, "$position", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "$position", Toast.LENGTH_SHORT).show()
             if (position == 0 && !serviceRunning) {
-                killServiceFlag = false;
-                serviceRunning = true;
+                serviceRunning = true
                 Intent(this, BackgroundService::class.java).also { intent ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intent);
+                        startForegroundService(intent)
                     } else {
-                        startService(intent);
+                        startService(intent)
                     }
                 }
-                Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show()
             }
             if (position == 1) {
-                Connectivity.mqttPublish("reply: what is up".toByteArray());
+                Connectivity.mqttPublish("reply: what is up".toByteArray())
             }
             if (position == 20 && serviceRunning) {
-                killServiceFlag = true;
+                serviceRunning = false
                 Intent(this, BackgroundService::class.java).also {intent ->
-                    stopService(intent);
+                    stopService(intent)
                 }
-                Toast.makeText(this, "killing service", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "killing service", Toast.LENGTH_SHORT).show()
             }
         }
     }
-
-    override fun onDestroy() {
-        super.onDestroy();
-//        Intent(this, BackgroundService::class.java).also {intent ->
-//            stopService(intent);
-//        }
-    }
-
 }
