@@ -25,10 +25,14 @@ private var mqttConfigured = false
 
 class Connectivity : BroadcastReceiver() {
     private var mqtt = false
+    private var mqttIsConnecting = false
     private var networkStatus: Int = 0
     private var networkPrevStatus = 3
     private val connectOption = MqttConnectOptions()
     private val handler = Handler();
+
+    private var mqttConnectThread: Thread = Thread(ServiceRunnable(true))
+    private var mqttDisconnectThread: Thread = Thread(ServiceRunnable(false))
 
     companion object {
         private lateinit var mqttClient : MqttClient
@@ -67,11 +71,37 @@ class Connectivity : BroadcastReceiver() {
     }
 
     fun mqttConnect() {
-        Thread(ServiceRunnable(true)).start() //connect mqtt
+        try {
+            when (mqttConnectThread.state) {
+                Thread.State.TERMINATED -> {
+                    mqttConnectThread.interrupt()
+                    mqttConnectThread = Thread(ServiceRunnable(true))
+                    mqttConnectThread.start()
+                }
+                Thread.State.NEW -> mqttConnectThread.start()
+                Thread.State.RUNNABLE -> Log.d("VTAG", "Thread is already Running")
+                else -> Log.d("VTAG", "Pointer went to undefined state")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun mqttDisconnect() {
-        Thread(ServiceRunnable(false)).start() //disconnect mqtt
+        try {
+            when (mqttDisconnectThread.state) {
+                Thread.State.TERMINATED -> {
+                    mqttDisconnectThread.interrupt()
+                    mqttDisconnectThread = Thread(ServiceRunnable(false))
+                    mqttDisconnectThread.start()
+                }
+                Thread.State.NEW -> mqttDisconnectThread.start()
+                Thread.State.RUNNABLE -> Log.d("VTAG", "Thread is already Running")
+                else -> Log.d("VTAG", "Pointer went to undefined state")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun mqttClose() {
@@ -97,30 +127,31 @@ class Connectivity : BroadcastReceiver() {
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
             connectOption.isAutomaticReconnect = false // false important
-            connectOption.keepAliveInterval = 10
-            connectOption.connectionTimeout = 5
-            connectOption.maxInflight = 100
+            connectOption.keepAliveInterval = 30
+            connectOption.connectionTimeout = 10
+            connectOption.maxInflight = 40
 
             mqttClient = MqttClient(brokerAddress, clientId, persistence)
             mqttClient.setCallback(object: MqttCallbackExtended {
+
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                    Log.d("VTAG", "connection complete $reconnect")
+                    Log.d("VTAG", "Connection Complete")
                     if (!mqtt) {
-//                        mqttUnsubscribe(subscribeTopic);
                         mqttSubscribe(subscribeTopic)
                         mqtt = true
                     }
+                    mqttPublish("Device: $udi Connected".toByteArray())
                 }
 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
                     Log.d("VTAG", message.toString())
-                    mqttPublish("what the hell is this".toByteArray())
+                    mqttPublish("Message Acknowledged from $udi".toByteArray())
                 }
 
                 override fun connectionLost(cause: Throwable?) {
-                    Log.d("VTAG", "connection has been lost. WTF!!!")
+                    Log.d("VTAG", "Connection lost. WTF!!!")
                     if (!mqttClient.isConnected) {
-                        handler.postDelayed({mqttConnect()}, 1000)
+                        handler.postDelayed({mqttConnect()}, 3000)
                     }
                 }
 
@@ -134,33 +165,25 @@ class Connectivity : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkInfo: NetworkInfo? = conn.activeNetworkInfo
-        val wakeLock: PowerManager.WakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
+//        val wakeLock: PowerManager.WakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+//            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
+//        }
+
+        when (networkInfo?.type) {
+            ConnectivityManager.TYPE_WIFI -> {networkStatus = 1; Log.d("VTAG", "Wifi Connected")}
+            ConnectivityManager.TYPE_MOBILE -> {networkStatus = 2; Log.d("VTAG", "Cellular Connected")}
+            else -> {networkStatus = 3; Log.d("VTAG", "No Network Connection")}
         }
 
-        if (networkInfo!!.type == ConnectivityManager.TYPE_WIFI) {
-            networkStatus = 1
-            Log.d("VTAG", "Wifi Connected")
-        } else if (networkInfo!!.type == ConnectivityManager.TYPE_MOBILE) {
-            networkStatus = 2
-            Log.d("VTAG", "Cellular Connected")
-        } else {
-            networkStatus = 3
-            Log.d("VTAG", "No Network Connection")
-        }
         if (networkStatus != networkPrevStatus) {
             if ((networkStatus == 1 || networkStatus == 2) && !mqttClient.isConnected) {
-                Log.d("VTAG", "initializing connection sequence")
+                Log.d("VTAG", "Initializing Connect Sequence")
                 mqttConnect()
-                if (!wakeLock.isHeld) {
-                    wakeLock.acquire(0)
-                }
+//                if (!wakeLock.isHeld) { wakeLock.acquire(0) }
             } else if (networkStatus == 3) {
-                Log.d("VTAG", "initializing disconnect sequence")
+                Log.d("VTAG", "Intializing Disconnect Sequence")
                 mqttDisconnect()
-                if (wakeLock.isHeld) {
-                    wakeLock.release()
-                }
+//                if (wakeLock.isHeld) { wakeLock.release() }
             }
             networkPrevStatus = networkStatus
         }
@@ -169,62 +192,52 @@ class Connectivity : BroadcastReceiver() {
     private inner class ServiceRunnable(var flag: Boolean): Runnable {
         override fun run() {
             try {
-                if (flag && !mqttClient.isConnected && (networkStatus == 1 || networkStatus == 2)) {
-                    Log.d("VTAG", "connecting thread: $networkPrevStatus, $networkStatus")
+                if (flag && !mqttClient.isConnected && (networkStatus == 1 || networkStatus == 2) && !mqttIsConnecting) {
+                    mqttIsConnecting = true;
+                    Log.d("VTAG", "Thread: Connecting: $networkPrevStatus, $networkStatus")
                     val socket = Socket("hardware.wscada.net", 1883)
                     socket.close()
-                    if ((networkPrevStatus == 1 || networkPrevStatus == 2) && mqtt) {
-                        mqttClient.disconnectForcibly(1, 1, false)
-//                        mqttClient.close(true);
-//                        mqttConfigured = false;
-                    }
-//                    configureAndConnectMqtt();
                     mqttClient.connect(connectOption)
+                    mqttIsConnecting = false;
                 } else if (!flag && mqttClient.isConnected) {
+                    mqttIsConnecting = false;
                     mqttClient.unsubscribe(subscribeTopic)
                     mqttClient.disconnect()
-//                    mqttClient.close(true);
-//                    mqttConfigured = false;
-                    Log.d("VTAG", "disconnected thread")
+                    Log.d("VTAG", "Thread: Disconnected")
                 } else if (!flag && !mqttClient.isConnected) {
+                    mqttIsConnecting = false;
                     mqttClient.disconnectForcibly(1, 1, false)
-//                    mqttClient.close(true);
-//                    mqttConfigured = false;
-                    Log.d("VTAG", "forcefully disconnecting thread")
+                    Log.d("VTAG", "Thread: Forcefully Disconnected")
                 }
             } catch (e: MqttException) {
-                Log.d("VTAG", "okay cool thread whatever the error is $e")
+                mqttIsConnecting = false;
+                Log.d("VTAG", "Mqtt Exception is $e")
                 e.printStackTrace()
                 try {
-                    if (e.reasonCode == 0) {
-                        if (networkStatus == 1 || networkStatus == 2) {
-                            Log.d("VTAG", "Running again thread")
-                            Thread(ServiceRunnable(true)).start()
-                            Log.d("VTAG", "exiting this thing: ${e.reasonCode}")
+                    when (e.reasonCode) {
+                        0 -> {
+                            if (networkStatus == 1 || networkStatus == 2) {
+                                Log.d("VTAG", "Thread: Running Again")
+                                mqttConnect()
+                            }
                         }
-                    } else if (e.reasonCode == 32110) {
-                        // Connect already in progress
-                        Thread(ServiceRunnable(true)).start()
-                        Log.d("VTAG", "handling connection in progress")
-                    } else if (e.reasonCode == 5) {
-                        mqttClient.close()
-                        mqttConfigured = false
-                        configureAndConnectMqtt()
-                        Thread(ServiceRunnable(true)).start()
-                    } else {
-                        Thread(ServiceRunnable(true)).start() // 32103 // java.net.ConnectException
-                        Log.d("VTAG", "error cause is : ${e.reasonCode}")
+                        32110 -> { mqttConnect(); Log.d("VTAG", "Handling connection in progress") }
+                        5 -> { mqttClient.close(); mqttConfigured = false; configureAndConnectMqtt(); mqttConnect() }
+                        else -> { mqttConnect(); Log.d("VTAG", "Mqtt error code: ${e.reasonCode}") }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
             } catch (e: ConnectException) {
+                mqttIsConnecting = false;
                 Log.d("VTAG", "No Internet Connection")
                 e.printStackTrace()
-                Thread(ServiceRunnable(true)).start()
+                mqttConnect()
             } catch (e: Exception) {
+                mqttIsConnecting = false;
                 Log.d("VTAG", "Unknown Error")
                 e.printStackTrace()
+                handler.postDelayed({ mqttConnect() }, 2000)
             }
         }
     }
