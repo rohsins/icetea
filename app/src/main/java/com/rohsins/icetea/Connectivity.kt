@@ -15,10 +15,10 @@ import java.net.ConnectException
 import java.net.Socket
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883"
-private const val mqttClientId = "rohsinsKotlinJ3"
+private const val mqttClientId = "rohsinsKotlinW"
 private const val mqttUserName = "rtshardware"
 private const val mqttPassword = "rtshardware"
-private const val udi = "TestSequence1821"
+private const val udi = "TestSequence1801"
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi"
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi"
 private var mqttConfigured = false
@@ -28,6 +28,7 @@ class Connectivity : BroadcastReceiver() {
     private var networkStatus: Int = 0
     private var networkPrevStatus = 3
     private val connectOption = MqttConnectOptions()
+    private val handler = Handler();
 
     companion object {
         private lateinit var mqttClient : MqttClient
@@ -119,7 +120,7 @@ class Connectivity : BroadcastReceiver() {
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "connection has been lost. WTF!!!")
                     if (!mqttClient.isConnected) {
-                        Handler().postDelayed({mqttConnect()}, 1000)
+                        handler.postDelayed({mqttConnect()}, 1000)
                     }
                 }
 
@@ -132,15 +133,15 @@ class Connectivity : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo: NetworkInfo = conn.activeNetworkInfo
+        val networkInfo: NetworkInfo? = conn.activeNetworkInfo
         val wakeLock: PowerManager.WakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
         }
 
-        if (networkInfo.type == ConnectivityManager.TYPE_WIFI) {
+        if (networkInfo!!.type == ConnectivityManager.TYPE_WIFI) {
             networkStatus = 1
             Log.d("VTAG", "Wifi Connected")
-        } else if (networkInfo.type == ConnectivityManager.TYPE_MOBILE) {
+        } else if (networkInfo!!.type == ConnectivityManager.TYPE_MOBILE) {
             networkStatus = 2
             Log.d("VTAG", "Cellular Connected")
         } else {
