@@ -14,13 +14,13 @@ import java.lang.Exception
 import java.net.ConnectException
 import java.net.Socket
 
-private const val mqttURI = "tcp://hardware.wscada.net:1883"
-private const val mqttClientId = "rohsinsKotlinW"
-private const val mqttUserName = "rtshardware"
-private const val mqttPassword = "rtshardware"
-private const val udi = "TestSequence1801"
-private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi"
-private const val publishTopic = "RTSR&D/baanvak/pub/$udi"
+private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
+private const val mqttClientId = "rohsinsKotlinW" // Arbitrary
+private const val mqttUserName = "rtshardware" // fixed
+private const val mqttPassword = "rtshardware" // fixed
+private const val udi = "TestSequence1801" // Arbitrary
+private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
+private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
 
 class Connectivity : BroadcastReceiver() {
@@ -29,13 +29,15 @@ class Connectivity : BroadcastReceiver() {
     private var networkStatus: Int = 0
     private var networkPrevStatus = 3
     private val connectOption = MqttConnectOptions()
-    private val handler = Handler();
+    private val handler = Handler()
 
     private var mqttConnectThread: Thread = Thread(ServiceRunnable(true))
     private var mqttDisconnectThread: Thread = Thread(ServiceRunnable(false))
 
+    private lateinit var wakeLock: PowerManager.WakeLock
+
     companion object {
-        private lateinit var mqttClient : MqttClient
+        private lateinit var mqttClient: MqttClient
 
         fun mqttPublish(mqttMessage: MqttMessage) {
             Thread(PublishRunnable(mqttMessage)).start()
@@ -126,10 +128,10 @@ class Connectivity : BroadcastReceiver() {
             connectOption.userName = mqttUserName
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
-            connectOption.isAutomaticReconnect = false // false important
-            connectOption.keepAliveInterval = 30
-            connectOption.connectionTimeout = 10
-            connectOption.maxInflight = 40
+            connectOption.isAutomaticReconnect = true // false important
+            connectOption.keepAliveInterval = 10
+            connectOption.connectionTimeout = 5
+            connectOption.maxInflight = 10
 
             mqttClient = MqttClient(brokerAddress, clientId, persistence)
             mqttClient.setCallback(object: MqttCallbackExtended {
@@ -140,7 +142,7 @@ class Connectivity : BroadcastReceiver() {
                         mqttSubscribe(subscribeTopic)
                         mqtt = true
                     }
-                    mqttPublish("Device: $udi Connected".toByteArray())
+                    mqttClient.publish("RTSR&D/baanvak/pub/ConnectInfo", "Device: $udi Connected".toByteArray(), 2,false)
                 }
 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -150,9 +152,9 @@ class Connectivity : BroadcastReceiver() {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "Connection lost. WTF!!!")
-                    if (!mqttClient.isConnected) {
-                        handler.postDelayed({mqttConnect()}, 3000)
-                    }
+//                    if (!mqttClient.isConnected) {
+//                        handler.postDelayed({mqttConnect()}, 3000)
+//                    }
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -165,9 +167,9 @@ class Connectivity : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkInfo: NetworkInfo? = conn.activeNetworkInfo
-//        val wakeLock: PowerManager.WakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-//            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
-//        }
+        wakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
+        }
 
         when (networkInfo?.type) {
             ConnectivityManager.TYPE_WIFI -> {networkStatus = 1; Log.d("VTAG", "Wifi Connected")}
@@ -179,14 +181,18 @@ class Connectivity : BroadcastReceiver() {
             if ((networkStatus == 1 || networkStatus == 2) && !mqttClient.isConnected) {
                 Log.d("VTAG", "Initializing Connect Sequence")
                 mqttConnect()
-//                if (!wakeLock.isHeld) { wakeLock.acquire(0) }
+                if (!wakeLock.isHeld) { wakeLock.acquire(0) }
+                Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
             } else if (networkStatus == 3) {
                 Log.d("VTAG", "Intializing Disconnect Sequence")
                 mqttDisconnect()
-//                if (wakeLock.isHeld) { wakeLock.release() }
+                if (wakeLock.isHeld) { wakeLock.release() }
+                Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
             }
             networkPrevStatus = networkStatus
         }
+
+        Log.d("VTAG", "The state of network: ${networkInfo?.state}")
     }
 
     private inner class ServiceRunnable(var flag: Boolean): Runnable {
@@ -229,12 +235,12 @@ class Connectivity : BroadcastReceiver() {
                     e.printStackTrace()
                 }
             } catch (e: ConnectException) {
-                mqttIsConnecting = false;
+                mqttIsConnecting = false
                 Log.d("VTAG", "No Internet Connection")
                 e.printStackTrace()
                 mqttConnect()
             } catch (e: Exception) {
-                mqttIsConnecting = false;
+                mqttIsConnecting = false
                 Log.d("VTAG", "Unknown Error")
                 e.printStackTrace()
                 handler.postDelayed({ mqttConnect() }, 2000)
