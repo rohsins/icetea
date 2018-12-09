@@ -8,6 +8,7 @@ import android.net.NetworkInfo
 import android.os.Handler
 import android.os.PowerManager
 import android.util.Log
+import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.lang.Exception
@@ -15,10 +16,10 @@ import java.net.ConnectException
 import java.net.Socket
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
-private const val mqttClientId = "rohsinsKotlinW" // Arbitrary
+private const val mqttClientId = "rohsinsOKotlinW" // Arbitrary
 private const val mqttUserName = "rtshardware" // fixed
 private const val mqttPassword = "rtshardware" // fixed
-private const val udi = "TestSequence1801" // Arbitrary
+private const val udi = "TestSequence1800" // Arbitrary
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
@@ -37,7 +38,7 @@ class Connectivity : BroadcastReceiver() {
     private lateinit var wakeLock: PowerManager.WakeLock
 
     companion object {
-        private lateinit var mqttClient: MqttClient
+        private lateinit var mqttClient: MqttAndroidClient
 
         fun mqttPublish(mqttMessage: MqttMessage) {
             Thread(PublishRunnable(mqttMessage)).start()
@@ -112,8 +113,10 @@ class Connectivity : BroadcastReceiver() {
             mqttClient.disconnect()
             mqttClient.close();
         } else {
-            mqttClient.disconnectForcibly(1, 1, false);
-            mqttClient.close(true);
+            mqttClient.disconnectForcibly(10)
+//            mqttClient.disconnectForcibly(1, 1, false);
+            mqttClient.close()
+//            mqttClient.close(true);
         }
     }
 
@@ -123,17 +126,17 @@ class Connectivity : BroadcastReceiver() {
 
             val brokerAddress = mqttURI
             val clientId = mqttClientId
-            val persistence = MemoryPersistence()
+            val persistence: MqttClientPersistence? = null
 
             connectOption.userName = mqttUserName
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
-            connectOption.isAutomaticReconnect = true // false important
+            connectOption.isAutomaticReconnect = false // false important
             connectOption.keepAliveInterval = 10
             connectOption.connectionTimeout = 5
             connectOption.maxInflight = 10
 
-            mqttClient = MqttClient(brokerAddress, clientId, persistence)
+            mqttClient = MqttAndroidClient(MainActivity.ApplicationContext, brokerAddress, clientId, persistence)
             mqttClient.setCallback(object: MqttCallbackExtended {
 
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
@@ -152,9 +155,9 @@ class Connectivity : BroadcastReceiver() {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "Connection lost. WTF!!!")
-//                    if (!mqttClient.isConnected) {
-//                        handler.postDelayed({mqttConnect()}, 3000)
-//                    }
+                    if (!mqttClient.isConnected) {
+                        handler.postDelayed({mqttConnect()}, 3000)
+                    }
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -212,7 +215,8 @@ class Connectivity : BroadcastReceiver() {
                     Log.d("VTAG", "Thread: Disconnected")
                 } else if (!flag && !mqttClient.isConnected) {
                     mqttIsConnecting = false;
-                    mqttClient.disconnectForcibly(1, 1, false)
+                    mqttClient.disconnectForcibly(10)
+//                    mqttClient.disconnectForcibly(1, 1, false)
                     Log.d("VTAG", "Thread: Forcefully Disconnected")
                 }
             } catch (e: MqttException) {

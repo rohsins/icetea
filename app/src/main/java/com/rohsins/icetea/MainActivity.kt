@@ -11,6 +11,7 @@ import android.widget.Toast
 class MainActivity : AppCompatActivity() {
     companion object {
         var serviceRunning = false
+        lateinit var ApplicationContext: Context
     }
 
 //    private lateinit var wakeLock: PowerManager.WakeLock;
@@ -19,6 +20,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        ApplicationContext = applicationContext;
 //        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
 //            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connsectivity::WakeLock")
 //        }
