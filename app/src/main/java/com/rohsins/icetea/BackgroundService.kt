@@ -48,7 +48,7 @@ class BackgroundService: Service() {
         Log.d("VTAG", "starting service")
         startForeground(291, serviceNotificationBuilder!!.build())
         this.registerReceiver(connectivity, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
-        connectivity.configureAndConnectMqtt()
+        connectivity.configureAndConnectMqtt(applicationContext)
         return START_STICKY
     }
 
@@ -58,8 +58,9 @@ class BackgroundService: Service() {
 
     override fun onDestroy() {
         Log.d("VTAG", "killing service")
-        connectivity.mqttDisconnect()
+//        connectivity.mqttDisconnect()
         this.unregisterReceiver(connectivity)
+        connectivity.destroy()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {

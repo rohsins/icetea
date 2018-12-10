@@ -11,27 +11,11 @@ import android.widget.Toast
 class MainActivity : AppCompatActivity() {
     companion object {
         var serviceRunning = false
-        lateinit var ApplicationContext: Context
     }
-
-//    private lateinit var wakeLock: PowerManager.WakeLock;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        ApplicationContext = applicationContext;
-//        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-//            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connsectivity::WakeLock")
-//        }
-
-//        Intent(this, BackgroundService::class.java).also { intent ->
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                startForegroundService(intent);
-//            } else {
-//                startService(intent);
-//            }
-//        }
 
         val gridView: GridView = findViewById(R.id.gridView)
         gridView.adapter = ImageAdapter(this)
@@ -39,7 +23,6 @@ class MainActivity : AppCompatActivity() {
         gridView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             Toast.makeText(this, "$position", Toast.LENGTH_SHORT).show()
             if (position == 0 && !serviceRunning) {
-//                if (!wakeLock!!.isHeld) { wakeLock.acquire(0) }
                 serviceRunning = true
                 Intent(this, BackgroundService::class.java).also { intent ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -52,7 +35,6 @@ class MainActivity : AppCompatActivity() {
             } else if (position == 1) {
                 Connectivity.mqttPublish("reply: what is up".toByteArray())
             } else if (position == 20 && serviceRunning) {
-//                if (wakeLock!!.isHeld) { wakeLock.release() }
                 serviceRunning = false
                 Intent(this, BackgroundService::class.java).also {intent ->
                     stopService(intent)
