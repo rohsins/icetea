@@ -10,16 +10,15 @@ import android.os.PowerManager
 import android.util.Log
 import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.lang.Exception
 import java.net.ConnectException
 import java.net.Socket
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
-private const val mqttClientId = "rohsinsOKotlinW" // Arbitrary
+private const val mqttClientId = "rohsinsOKotlinW4" // Arbitrary
 private const val mqttUserName = "rtshardware" // fixed
 private const val mqttPassword = "rtshardware" // fixed
-private const val udi = "TestSequence1800" // Arbitrary
+private const val udi = "TestSequence1804" // Arbitrary
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
@@ -37,6 +36,7 @@ class Connectivity : BroadcastReceiver() {
 
     private lateinit var wakeLock: PowerManager.WakeLock
     private var mqttApplicationContext: Context? = null
+    private var mqttConnectLock: Boolean = false
 
     companion object {
         private lateinit var mqttClient: MqttAndroidClient
@@ -75,19 +75,23 @@ class Connectivity : BroadcastReceiver() {
     }
 
     fun mqttConnect() {
-        try {
-            when (mqttConnectThread.state) {
-                Thread.State.TERMINATED -> {
-                    mqttConnectThread.interrupt()
-                    mqttConnectThread = Thread(ServiceRunnable(true))
-                    mqttConnectThread.start()
+        if (!mqttConnectLock) {
+            try {
+                when (mqttConnectThread.state) {
+                    Thread.State.TERMINATED -> {
+                        mqttConnectThread.interrupt()
+                        mqttConnectThread = Thread(ServiceRunnable(true))
+                        mqttConnectThread.start()
+                    }
+                    Thread.State.NEW -> mqttConnectThread.start()
+                    Thread.State.RUNNABLE -> Log.d("VTAG", "Thread is already Running")
+                    else -> Log.d("VTAG", "Pointer went to undefined state")
                 }
-                Thread.State.NEW -> mqttConnectThread.start()
-                Thread.State.RUNNABLE -> Log.d("VTAG", "Thread is already Running")
-                else -> Log.d("VTAG", "Pointer went to undefined state")
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } else {
+            Log.d("VTAG", "Mqtt Connect Lock is activated: Not connecting")
         }
     }
 
@@ -108,35 +112,36 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
-    fun mqttClose() {
-        try {
-            mqttConnectThread.interrupt()
-            if (mqttClient.isConnected) {
-                mqttUnsubscribe(subscribeTopic)
-                mqttClient.disconnect()
-//                    mqttClient.close()
-            } else {
-                mqttClient.disconnectForcibly(10)
-//            mqttClient.disconnectForcibly(1, 1, false)
-//                    mqttClient.close()
-//            mqttClient.close(true)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     fun destroy() {
         try {
+            mqttConnectLock = true
             mqttConnectThread.interrupt()
             mqttDisconnectThread.interrupt()
             if (mqttClient.isConnected) {
+                Log.d("VTAG", "isfasdfasd: ${mqttClient.isConnected}")
                 mqttClient.unsubscribe(subscribeTopic)
-                mqttClient.disconnect()
+                mqttClient.disconnect(this, object: IMqttActionListener {
+                    override fun onSuccess(asyncActionToken: IMqttToken?) {
+                        Log.d("VTAG", "Mqtt client disconnect successful: token thing")
+                        mqttClient.unregisterResources()
+                        mqttClient.close()
+                        handler.postDelayed({mqttConnectLock = false}, 100)
+                    }
+
+                    override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                        Log.d("VTAG", "Mqtt client disconnect failed: token thing")
+                        mqttClient.disconnectForcibly()
+                        mqttClient.unregisterResources()
+                        mqttClient.close()
+                        handler.postDelayed({mqttConnectLock = false}, 100)
+                    }
+                })
             } else {
-                // mqttClient.disconnectForcibly()
+                mqttClient.disconnectForcibly()
+                mqttClient.unregisterResources()
+                mqttClient.close()
+                handler.postDelayed({mqttConnectLock = false}, 100)
             }
-            mqttClient.close()
             mqttConfigured = false
         } catch (e: Exception) {
             e.printStackTrace()
@@ -158,8 +163,8 @@ class Connectivity : BroadcastReceiver() {
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
             connectOption.isAutomaticReconnect = false // false important
-            connectOption.keepAliveInterval = 10
-            connectOption.connectionTimeout = 5
+            connectOption.keepAliveInterval = 60
+            connectOption.connectionTimeout = 10
             connectOption.maxInflight = 10
 
             mqttClient = MqttAndroidClient(mqttContext, brokerAddress, clientId, persistence)
@@ -181,7 +186,8 @@ class Connectivity : BroadcastReceiver() {
 
                 override fun connectionLost(cause: Throwable?) {
                     Log.d("VTAG", "Connection lost. WTF!!!")
-                    if (!mqttClient.isConnected) {
+                    if (!mqttClient.isConnected && !mqttConnectLock) {
+                        Log.d("VTAG", "Entered in post delay handle execution: $mqttConnectLock")
                         handler.postDelayed({mqttConnect()}, 3000)
                     }
                 }
@@ -242,8 +248,7 @@ class Connectivity : BroadcastReceiver() {
                     Log.d("VTAG", "Thread: Disconnected")
                 } else if (!flag && !mqttClient.isConnected) {
                     mqttIsConnecting = false
-                    mqttClient.disconnectForcibly(10)
-//                    mqttClient.disconnectForcibly(1, 1, false)
+//                    mqttClient.disconnectForcibly()
                     Log.d("VTAG", "Thread: Forcefully Disconnected")
                 }
             } catch (e: MqttException) {

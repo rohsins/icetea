@@ -63,12 +63,12 @@ class BackgroundService: Service() {
         connectivity.destroy()
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(rootIntent);
-        } else {
-            startService(rootIntent);
-        }
-    }
+//    override fun onTaskRemoved(rootIntent: Intent?) {
+//        super.onTaskRemoved(rootIntent)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            startForegroundService(rootIntent);
+//        } else {
+//            startService(rootIntent);
+//        }
+//    }
 }
