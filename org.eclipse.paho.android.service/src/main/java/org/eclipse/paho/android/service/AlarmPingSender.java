@@ -113,13 +113,13 @@ class AlarmPingSender implements MqttPingSender {
         if(Build.VERSION.SDK_INT >= 23){
 			// In SDK 23 and above, dosing will prevent setExact, setExactAndAllowWhileIdle will force
 			// the device to run this task whilst dosing.
-//			Log.d(TAG, "Alarm scheule using setExactAndAllowWhileIdle, next: " + delayInMilliseconds);
-			Log.d(TAG, "Alarm scheule using setExactAndAllowWhileIdle, next: " + fKeepalive);
+//			Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + delayInMilliseconds);
+//			Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
 			alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
 					pendingIntent);
 		} else if (Build.VERSION.SDK_INT >= 19) {
-//			Log.d(TAG, "Alarm scheule using setExact, delay: " + delayInMilliseconds);
-			Log.d(TAG, "Alarm scheule using setExact, delay: " + fKeepalive);
+//			Log.d(TAG, "Alarm schedule using setExact, delay: " + delayInMilliseconds);
+//			Log.d(TAG, "Alarm schedule using setExact, delay: " + fKeepalive);
 			alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
 					pendingIntent);
 		} else {
@@ -146,7 +146,7 @@ class AlarmPingSender implements MqttPingSender {
 			// finished handling the broadcast.", but this class still get
 			// a wake lock to wait for ping finished.
 
-			Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
+//			Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
 
 			PowerManager pm = (PowerManager) service
 					.getSystemService(Service.POWER_SERVICE);
@@ -178,13 +178,15 @@ class AlarmPingSender implements MqttPingSender {
 
 			if (System.currentTimeMillis() > pingThreshold) {
 				try {
+					Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
 					MqttMessage mqttMsg = new MqttMessage();
 					mqttMsg.setQos(0);
 					mqttMsg.clearPayload();
 					mqttMsg.setPayload("".getBytes());
 					comms.getClient().publish(" ", mqttMsg);
 					pingThreshold = System.currentTimeMillis() + fKeepalive;
-					Log.d(TAG, "Customized PING packet sent");
+					Log.d(TAG, "Customized PING Packet Sent");
+					Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
 
 				} catch (Exception e) {
 					e.printStackTrace();

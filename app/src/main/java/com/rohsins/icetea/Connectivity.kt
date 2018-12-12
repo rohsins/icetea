@@ -15,10 +15,10 @@ import java.net.ConnectException
 import java.net.Socket
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
-private const val mqttClientId = "rohsinsOKotlinW4" // Arbitrary
+private const val mqttClientId = "rohsinsOKotlinW0" // Arbitrary
 private const val mqttUserName = "rtshardware" // fixed
 private const val mqttPassword = "rtshardware" // fixed
-private const val udi = "TestSequence1804" // Arbitrary
+private const val udi = "TestSequence1800" // Arbitrary
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
@@ -130,14 +130,14 @@ class Connectivity : BroadcastReceiver() {
 
                     override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
                         Log.d("VTAG", "Mqtt client disconnect failed: token thing")
-                        mqttClient.disconnectForcibly()
+//                        mqttClient.disconnectForcibly()
                         mqttClient.unregisterResources()
                         mqttClient.close()
                         handler.postDelayed({mqttConnectLock = false}, 100)
                     }
                 })
             } else {
-                mqttClient.disconnectForcibly()
+//                mqttClient.disconnectForcibly()
                 mqttClient.unregisterResources()
                 mqttClient.close()
                 handler.postDelayed({mqttConnectLock = false}, 100)
@@ -163,9 +163,9 @@ class Connectivity : BroadcastReceiver() {
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
             connectOption.isAutomaticReconnect = false // false important
-            connectOption.keepAliveInterval = 60
+            connectOption.keepAliveInterval = 35
             connectOption.connectionTimeout = 10
-            connectOption.maxInflight = 10
+            connectOption.maxInflight = 50
 
             mqttClient = MqttAndroidClient(mqttContext, brokerAddress, clientId, persistence)
             mqttClient.setCallback(object: MqttCallbackExtended {
