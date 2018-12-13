@@ -171,7 +171,7 @@ class Connectivity : BroadcastReceiver() {
                         mqttSubscribe(subscribeTopic)
                         mqtt = true
                     }
-                    mqttClient.publish("RTSR&D/baanvak/pub/ConnectInfo", "Device: $udi Connected".toByteArray(), 2,false)
+                    mqttClient.publish("dev/publisher/ConnectInfo", "Device: $udi Connected".toByteArray(), 2,false)
                 }
 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
