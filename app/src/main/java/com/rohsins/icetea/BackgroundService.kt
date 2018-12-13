@@ -1,6 +1,7 @@
 package com.rohsins.icetea
 
 import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -66,15 +67,28 @@ class BackgroundService: Service() {
         Log.d("VTAG", "onTaskRemoved")
         super.onTaskRemoved(rootIntent)
 
-        val intent = Intent(applicationContext, BackgroundService::class.java)
-        val pendingIntent = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_ONE_SHOT)
-        val alarmManager = (getSystemService(Context.ALARM_SERVICE)) as AlarmManager
-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
+        this.registerReceiver(AlarmReceiver(), IntentFilter("bService"))
 
+        val intent = Intent(applicationContext, BackgroundService::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, Intent("bService"), PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val alarmManager = (getSystemService(Context.ALARM_SERVICE)) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
+        }
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //            startForegroundService(rootIntent);
 //        } else {
 //            startService(rootIntent);
 //        }
+    }
+    inner class AlarmReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            startForeground(291, serviceNotificationBuilder!!.build())
+            this@BackgroundService.unregisterReceiver(AlarmReceiver())
+        }
+
     }
 }
