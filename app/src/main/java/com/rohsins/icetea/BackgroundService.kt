@@ -17,6 +17,7 @@ class BackgroundService: Service() {
     private var serviceChannelId: String? = null
     private var serviceNotificationBuilder: NotificationCompat.Builder? = null
     private var serviceNotificationManager: NotificationManager? = null
+    private var serviceAlive = false
 
     override fun onCreate() {
         super.onCreate()
@@ -44,6 +45,7 @@ class BackgroundService: Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int) : Int {
         Log.d("VTAG", "starting service")
+        serviceAlive = true
         startForeground(291, serviceNotificationBuilder!!.build())
         this.registerReceiver(connectivity, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
         connectivity.configureAndConnectMqtt(applicationContext)
@@ -61,13 +63,13 @@ class BackgroundService: Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        Log.d("VTAG", "onTaskRemoved")
         super.onTaskRemoved(rootIntent)
 
         val intent = Intent(applicationContext, BackgroundService::class.java)
         val pendingIntent = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_ONE_SHOT)
         val alarmManager = (getSystemService(Context.ALARM_SERVICE)) as AlarmManager
         alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
-
 
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //            startForegroundService(rootIntent);

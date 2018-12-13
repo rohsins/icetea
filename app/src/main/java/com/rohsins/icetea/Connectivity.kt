@@ -19,8 +19,8 @@ private const val mqttClientId = "rohsinsOKotlinW0" // Arbitrary
 private const val mqttUserName = "rtshardware" // fixed
 private const val mqttPassword = "rtshardware" // fixed
 private const val udi = "TestSequence1800" // Arbitrary
-private const val subscribeTopic = "RTSR&D/baanvak/subscriber/$udi" // fixed
-private const val publishTopic = "RTSR&D/baanvak/publisher/$udi" // fixed
+private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
+private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
 
 class Connectivity : BroadcastReceiver() {
@@ -118,14 +118,14 @@ class Connectivity : BroadcastReceiver() {
             mqttConnectThread.interrupt()
             mqttDisconnectThread.interrupt()
             if (mqttClient.isConnected) {
-                Log.d("VTAG", "isfasdfasd: ${mqttClient.isConnected}")
+                Log.d("VTAG", "Mqtt Client Connection: ${mqttClient.isConnected}")
                 mqttClient.unsubscribe(subscribeTopic)
                 mqttClient.disconnect(this, object: IMqttActionListener {
                     override fun onSuccess(asyncActionToken: IMqttToken?) {
                         Log.d("VTAG", "Mqtt client disconnect successful: token thing")
                         mqttClient.unregisterResources()
                         mqttClient.close()
-                        handler.postDelayed({mqttConnectLock = false}, 100)
+                        handler.postDelayed({mqttConnectLock = false}, 0)
                     }
 
                     override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -133,14 +133,14 @@ class Connectivity : BroadcastReceiver() {
 //                        mqttClient.disconnectForcibly()
                         mqttClient.unregisterResources()
                         mqttClient.close()
-                        handler.postDelayed({mqttConnectLock = false}, 100)
+                        handler.postDelayed({mqttConnectLock = false}, 0)
                     }
                 })
             } else {
 //                mqttClient.disconnectForcibly()
                 mqttClient.unregisterResources()
                 mqttClient.close()
-                handler.postDelayed({mqttConnectLock = false}, 100)
+                handler.postDelayed({mqttConnectLock = false}, 0)
             }
             mqttConfigured = false
         } catch (e: Exception) {
@@ -163,8 +163,8 @@ class Connectivity : BroadcastReceiver() {
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
             connectOption.isAutomaticReconnect = false // false important
-            connectOption.keepAliveInterval = 35
-            connectOption.connectionTimeout = 10
+            connectOption.keepAliveInterval = 30
+            connectOption.connectionTimeout = 5
             connectOption.maxInflight = 50
 
             mqttClient = MqttAndroidClient(mqttContext, brokerAddress, clientId, persistence)
@@ -188,7 +188,7 @@ class Connectivity : BroadcastReceiver() {
                     Log.d("VTAG", "Connection lost. WTF!!!")
                     if (!mqttClient.isConnected && !mqttConnectLock) {
                         Log.d("VTAG", "Entered in post delay handle execution: $mqttConnectLock")
-                        handler.postDelayed({mqttConnect()}, 3000)
+                        handler.postDelayed({mqttConnect()}, 2000)
                     }
                 }
 
