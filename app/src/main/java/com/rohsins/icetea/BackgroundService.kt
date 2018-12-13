@@ -1,8 +1,6 @@
 package com.rohsins.icetea
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -58,17 +56,23 @@ class BackgroundService: Service() {
 
     override fun onDestroy() {
         Log.d("VTAG", "killing service")
-//        connectivity.mqttDisconnect()
         this.unregisterReceiver(connectivity)
         connectivity.destroy()
     }
 
-//    override fun onTaskRemoved(rootIntent: Intent?) {
-//        super.onTaskRemoved(rootIntent)
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+
+        val intent = Intent(applicationContext, BackgroundService::class.java)
+        val pendingIntent = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_ONE_SHOT)
+        val alarmManager = (getSystemService(Context.ALARM_SERVICE)) as AlarmManager
+        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
+
+
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //            startForegroundService(rootIntent);
 //        } else {
 //            startService(rootIntent);
 //        }
-//    }
+    }
 }

@@ -16,11 +16,11 @@ import java.net.Socket
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
 private const val mqttClientId = "rohsinsOKotlinW0" // Arbitrary
-private const val mqttUserName = "developers" // fixed
-private const val mqttPassword = "rtsr&ddevelopers" // fixed
+private const val mqttUserName = "rtshardware" // fixed
+private const val mqttPassword = "rtshardware" // fixed
 private const val udi = "TestSequence1800" // Arbitrary
-private const val subscribeTopic = "dev/subscriber/$udi" // fixed
-private const val publishTopic = "dev/publisher/$udi" // fixed
+private const val subscribeTopic = "RTSR&D/baanvak/subscriber/$udi" // fixed
+private const val publishTopic = "RTSR&D/baanvak/publisher/$udi" // fixed
 private var mqttConfigured = false
 
 class Connectivity : BroadcastReceiver() {
