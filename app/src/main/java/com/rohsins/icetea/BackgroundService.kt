@@ -19,6 +19,7 @@ class BackgroundService: Service() {
     private var serviceNotificationBuilder: NotificationCompat.Builder? = null
     private var serviceNotificationManager: NotificationManager? = null
     private var serviceAlive = false
+    private val kSignalReceiver = KSignalReceiver()
 
     override fun onCreate() {
         super.onCreate()
@@ -47,6 +48,7 @@ class BackgroundService: Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int) : Int {
         Log.d("VTAG", "starting service")
         serviceAlive = true
+//        unregisterReceiver(KSignalReceiver())
         startForeground(291, serviceNotificationBuilder!!.build())
         this.registerReceiver(connectivity, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
         connectivity.configureAndConnectMqtt(applicationContext)
@@ -67,28 +69,17 @@ class BackgroundService: Service() {
         Log.d("VTAG", "onTaskRemoved")
         super.onTaskRemoved(rootIntent)
 
-        this.registerReceiver(AlarmReceiver(), IntentFilter("bService"))
+        val filter = IntentFilter("KSignalReceiverFlag")
+        registerReceiver(kSignalReceiver, filter)
 
-        val intent = Intent(applicationContext, BackgroundService::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(this, 0, Intent("bService"), PendingIntent.FLAG_UPDATE_CURRENT)
-
-        val alarmManager = (getSystemService(Context.ALARM_SERVICE)) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
-        } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100, pendingIntent)
-        }
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            startForegroundService(rootIntent);
-//        } else {
-//            startService(rootIntent);
-//        }
+        val intent = Intent("KSignalReceiverFlag")
+        sendBroadcast(intent)
     }
-    inner class AlarmReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            startForeground(291, serviceNotificationBuilder!!.build())
-            this@BackgroundService.unregisterReceiver(AlarmReceiver())
-        }
+}
+
+class KSignalReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        Log.d("VTAG", "KSig Triggered")
 
     }
 }

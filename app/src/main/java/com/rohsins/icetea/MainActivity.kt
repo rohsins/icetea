@@ -1,6 +1,5 @@
 package com.rohsins.icetea
 
-import android.content.Context
 import android.content.Intent
 import android.os.*
 import android.support.v7.app.AppCompatActivity
