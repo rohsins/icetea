@@ -19,7 +19,7 @@ class BackgroundService: Service() {
     private var serviceNotificationBuilder: NotificationCompat.Builder? = null
     private var serviceNotificationManager: NotificationManager? = null
     private var serviceAlive = false
-    private val kSignalReceiver = KSignalReceiver()
+//    private val kSignalReceiver = KSignalReceiver()
 
     override fun onCreate() {
         super.onCreate()
@@ -65,21 +65,21 @@ class BackgroundService: Service() {
         connectivity.destroy()
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        Log.d("VTAG", "onTaskRemoved")
-        super.onTaskRemoved(rootIntent)
-
-        val filter = IntentFilter("KSignalReceiverFlag")
-        registerReceiver(kSignalReceiver, filter)
-
-        val intent = Intent("KSignalReceiverFlag")
-        sendBroadcast(intent)
-    }
+//    override fun onTaskRemoved(rootIntent: Intent?) {
+//        Log.d("VTAG", "onTaskRemoved")
+//        super.onTaskRemoved(rootIntent)
+//
+//        val filter = IntentFilter("KSignalReceiverFlag")
+//        registerReceiver(kSignalReceiver, filter)
+//
+//        val intent = Intent("KSignalReceiverFlag")
+//        sendBroadcast(intent)
+//    }
 }
 
-class KSignalReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
-        Log.d("VTAG", "KSig Triggered")
-
-    }
-}
+//class KSignalReceiver : BroadcastReceiver() {
+//    override fun onReceive(context: Context?, intent: Intent?) {
+//        Log.d("VTAG", "KSig Triggered")
+//
+//    }
+//}
