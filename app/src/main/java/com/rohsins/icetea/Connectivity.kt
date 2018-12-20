@@ -41,11 +41,11 @@ class Connectivity : BroadcastReceiver() {
     private var mqttConnectLock: Boolean = false
     private lateinit var mqttClient: MqttAndroidClient
 
-    public fun mqttPublish(mqttMessage: MqttMessage) {
+    fun mqttPublish(mqttMessage: MqttMessage) {
         Thread(PublishRunnable(mqttMessage)).start()
     }
 
-    public fun mqttPublish(mqttMessage: ByteArray) {
+    fun mqttPublish(mqttMessage: ByteArray) {
         Thread(PublishRunnable(mqttMessage)).start()
     }
 
@@ -147,7 +147,7 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
-    public fun configureAndConnectMqtt(mqttContext: Context? = mqttApplicationContext) {
+    fun configureAndConnectMqtt(mqttContext: Context? = mqttApplicationContext) {
         if (mqttContext != null) {
             mqttApplicationContext = mqttContext
         }
@@ -200,7 +200,7 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
-    public fun unconfigureAndDisconnectMqtt() {
+    fun unconfigureAndDisconnectMqtt() {
         if (mqttConfigured) {
             mqttConfigured = false
             mqttApplicationContext!!.unregisterReceiver(this)
@@ -326,6 +326,8 @@ class Connectivity : BroadcastReceiver() {
                     Log.d("VTAG", "Publish: no network connection")
                 }
             } catch (e: MqttException) {
+                e.printStackTrace()
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

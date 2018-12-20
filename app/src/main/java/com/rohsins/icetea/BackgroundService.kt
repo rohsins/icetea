@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
@@ -59,7 +60,8 @@ class BackgroundService: Service() {
 
     override fun onDestroy() {
         Log.d("VTAG", "killing service")
-        connectivity.unconfigureAndDisconnectMqtt()
+        connectivity.mqttPublish("Service Killed".toByteArray())
+        Handler().postDelayed({ connectivity.unconfigureAndDisconnectMqtt() }, 2000)
         unregisterReceiver(kSignalReceiver)
     }
 
@@ -70,12 +72,16 @@ class BackgroundService: Service() {
 //        val filter = IntentFilter("KSignalReceiverFlag")
 //        registerReceiver(kSignalReceiver, filter)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val pendingIntent = PendingIntent.getForegroundService(applicationContext, 0,
-                Intent(this, BackgroundService::class.java), PendingIntent.FLAG_ONE_SHOT)
-            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, 0, pendingIntent)
-        }
+//        if (MainActivity.serviceRunning) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val pendingIntent = PendingIntent.getForegroundService(
+                    applicationContext, 0,
+                    Intent(this, BackgroundService::class.java), PendingIntent.FLAG_ONE_SHOT
+                )
+                val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, 3000, pendingIntent)
+            }
+//        }
 
 //        val intent = Intent("KSignalReceiverFlag")
 //        sendBroadcast(intent)
