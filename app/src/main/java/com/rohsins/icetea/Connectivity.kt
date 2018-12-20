@@ -231,10 +231,10 @@ class Connectivity : BroadcastReceiver() {
             if (networkStatus != networkPrevStatus) {
                 if ((networkStatus == 1 || networkStatus == 2) && !mqttClient.isConnected) {
                     Log.d("VTAG", "Initializing Connect Sequence")
-                    mqttConnect()
                     if (!wakeLock.isHeld) {
                         wakeLock.acquire(0)
                     }
+                    mqttConnect()
                     Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
                 } else if (networkStatus == 3) {
                     Log.d("VTAG", "Intializing Disconnect Sequence")
