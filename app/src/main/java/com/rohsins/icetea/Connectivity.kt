@@ -1,6 +1,5 @@
 package com.rohsins.icetea
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -25,9 +24,8 @@ private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
 
-@SuppressLint("StaticFieldLeak")
-object Connectivity : BroadcastReceiver() {
-    private var useMqtt = false
+class Connectivity : BroadcastReceiver() {
+    private var useMqtt = true
     private var firstTimeMqttConnect = true
     private var mqttIsConnecting = false
     private var networkStatus: Int = 0
@@ -43,11 +41,11 @@ object Connectivity : BroadcastReceiver() {
     private var mqttConnectLock: Boolean = false
     private lateinit var mqttClient: MqttAndroidClient
 
-    fun mqttPublish(mqttMessage: MqttMessage) {
+    public fun mqttPublish(mqttMessage: MqttMessage) {
         Thread(PublishRunnable(mqttMessage)).start()
     }
 
-    fun mqttPublish(mqttMessage: ByteArray) {
+    public fun mqttPublish(mqttMessage: ByteArray) {
         Thread(PublishRunnable(mqttMessage)).start()
     }
 
@@ -113,7 +111,7 @@ object Connectivity : BroadcastReceiver() {
         }
     }
 
-    private fun destroy() {
+    private fun mqttDestroy() {
         try {
             mqttConnectLock = true
             mqttConnectThread.interrupt()
@@ -149,7 +147,7 @@ object Connectivity : BroadcastReceiver() {
         }
     }
 
-    fun configureAndConnectMqtt(mqttContext: Context? = mqttApplicationContext) {
+    public fun configureAndConnectMqtt(mqttContext: Context? = mqttApplicationContext) {
         if (mqttContext != null) {
             mqttApplicationContext = mqttContext
         }
@@ -198,14 +196,15 @@ object Connectivity : BroadcastReceiver() {
                 }
             })
             mqttApplicationContext!!.registerReceiver(this, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+//            mqttConnect()
         }
     }
 
-    fun unconfigureAndDisconnectMqtt() {
+    public fun unconfigureAndDisconnectMqtt() {
         if (mqttConfigured) {
             mqttConfigured = false
             mqttApplicationContext!!.unregisterReceiver(this)
-            mqttDisconnect()
+            mqttDestroy()
         }
     }
 
@@ -253,7 +252,7 @@ object Connectivity : BroadcastReceiver() {
         }
     }
 
-    private class ServiceRunnable(var flag: Boolean): Runnable {
+    private inner class ServiceRunnable(var flag: Boolean): Runnable {
         override fun run() {
             try {
                 if (flag && !mqttClient.isConnected && (networkStatus == 1 || networkStatus == 2) && !mqttIsConnecting) {
@@ -306,7 +305,7 @@ object Connectivity : BroadcastReceiver() {
         }
     }
 
-    private class PublishRunnable: Runnable {
+    private inner class PublishRunnable: Runnable {
         var mqttPayload = MqttMessage()
 
         constructor(mqttMessage: MqttMessage) {
