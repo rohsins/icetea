@@ -14,6 +14,7 @@ import org.eclipse.paho.client.mqttv3.*
 import java.lang.Exception
 import java.net.ConnectException
 import java.net.Socket
+import org.greenrobot.eventbus.EventBus
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
 private const val mqttClientId = "rohsinsOKotlinW1" // Arbitrary
@@ -181,6 +182,9 @@ class Connectivity : BroadcastReceiver() {
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
                     Log.d("VTAG", message.toString())
                     mqttPublish("Message Acknowledged from $udi".toByteArray())
+                    MessageEvent.mqttMessage = message
+                    MessageEvent.mqttTopic = topic
+                    EventBus.getDefault().post(MessageEvent)
                 }
 
                 override fun connectionLost(cause: Throwable?) {
@@ -332,4 +336,9 @@ class Connectivity : BroadcastReceiver() {
             }
         }
     }
+}
+
+object MessageEvent {
+    var mqttMessage: MqttMessage? = null
+    var mqttTopic: String? = null
 }
