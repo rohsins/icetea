@@ -182,11 +182,23 @@ class AlarmPingSender implements MqttPingSender {
 					MqttMessage mqttMsg = new MqttMessage();
 					mqttMsg.setQos(0);
 					mqttMsg.clearPayload();
-					mqttMsg.setPayload("".getBytes());
-					comms.getClient().publish(" ", mqttMsg);
-					pingThreshold = System.currentTimeMillis() + fKeepalive;
-					Log.d(TAG, "Customized PING Packet Sent");
-					Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
+					mqttMsg.setPayload("01".getBytes());
+					comms.getClient().publish("RTSR&D/baanvak/pub/ping", mqttMsg, this, new IMqttActionListener() {
+						@Override
+						public void onSuccess(IMqttToken asyncActionToken) {
+							pingThreshold = System.currentTimeMillis() + fKeepalive;
+							Log.d(TAG, "Customized PING Packet Sent");
+							Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
+						}
+
+						@Override
+						public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+							Log.d(TAG, "Customized PING Packet Send Failed");
+						}
+					});
+//					pingThreshold = System.currentTimeMillis() + fKeepalive;
+//					Log.d(TAG, "Customized PING Packet Sent");
+//					Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
 
 				} catch (Exception e) {
 					e.printStackTrace();

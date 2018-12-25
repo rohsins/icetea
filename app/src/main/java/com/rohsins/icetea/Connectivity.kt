@@ -24,6 +24,7 @@ private const val udi = "TestSequence1801" // Arbitrary
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
+private var connectRequest = false
 
 class Connectivity : BroadcastReceiver() {
     private var useMqtt = true
@@ -84,7 +85,10 @@ class Connectivity : BroadcastReceiver() {
                         mqttConnectThread.start()
                     }
                     Thread.State.NEW -> mqttConnectThread.start()
-                    Thread.State.RUNNABLE -> Log.d("VTAG", "Connect thread is already Running")
+                    Thread.State.RUNNABLE -> {
+                        connectRequest = true
+                        Log.d("VTAG", "Connect thread is already Running")
+                    }
                     else -> Log.d("VTAG", "Pointer went to undefined state")
                 }
             } catch (e: Exception) {
@@ -163,7 +167,7 @@ class Connectivity : BroadcastReceiver() {
             connectOption.password = mqttPassword.toCharArray()
             connectOption.isCleanSession = false // false important
             connectOption.isAutomaticReconnect = false // false important
-            connectOption.keepAliveInterval = 30
+            connectOption.keepAliveInterval = 39
             connectOption.connectionTimeout = 5
             connectOption.maxInflight = 50
 
@@ -306,6 +310,12 @@ class Connectivity : BroadcastReceiver() {
                 e.printStackTrace()
                 handler.postDelayed({ mqttConnect() }, 2000)
             }
+            if (connectRequest) {
+                connectRequest = false
+                mqttConnect()
+                Log.d("VTAG", "Connection request between thread execution")
+            }
+            Log.d("VTAG", "Con/Dis thread terminated")
         }
     }
 
