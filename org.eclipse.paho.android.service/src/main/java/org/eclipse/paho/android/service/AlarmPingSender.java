@@ -182,7 +182,7 @@ class AlarmPingSender implements MqttPingSender {
 					MqttMessage mqttMsg = new MqttMessage();
 					mqttMsg.setQos(0);
 					mqttMsg.clearPayload();
-					mqttMsg.setPayload("01".getBytes());
+					mqttMsg.setPayload("00".getBytes());
 					comms.getClient().publish("RTSR&D/baanvak/pub/ping", mqttMsg, this, new IMqttActionListener() {
 						@Override
 						public void onSuccess(IMqttToken asyncActionToken) {
