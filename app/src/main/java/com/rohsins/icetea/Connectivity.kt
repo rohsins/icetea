@@ -222,9 +222,9 @@ class Connectivity : BroadcastReceiver() {
         if (useMqtt) {
             val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val networkInfo: NetworkInfo? = conn.activeNetworkInfo
-            wakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
-            }
+//            wakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+//                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Connectivity::WakeLock")
+//            }
 
             when (networkInfo?.type) {
                 ConnectivityManager.TYPE_WIFI -> {
@@ -241,19 +241,19 @@ class Connectivity : BroadcastReceiver() {
             if (networkStatus != networkPrevStatus) {
                 if ((networkStatus == 1 || networkStatus == 2) && !mqttClient.isConnected) {
                     Log.d("VTAG", "Initializing Connect Sequence")
-                    if (!wakeLock.isHeld) {
-                        wakeLock.acquire(0)
-                    }
+//                    if (!wakeLock.isHeld) {
+//                        wakeLock.acquire(0)
+//                    }
                     mqttConnect()
-                    Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
+//                    Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
                 } else if (networkStatus == 3) {
                     Log.d("VTAG", "Intializing Disconnect Sequence")
                     mqttConnectThread.interrupt()
                     mqttDisconnect()
-                    if (wakeLock.isHeld) {
-                        wakeLock.release()
-                    }
-                    Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
+//                    if (wakeLock.isHeld) {
+//                        wakeLock.release()
+//                    }
+//                    Log.d("VTAG", "Wake Lock: ${wakeLock.isHeld}")
                 }
                 networkPrevStatus = networkStatus
             }
@@ -314,7 +314,8 @@ class Connectivity : BroadcastReceiver() {
             }
             if (connectRequest) {
                 connectRequest = false
-                mqttConnect()
+//                mqttConnect()
+                handler.postDelayed({mqttConnect()}, 2000)
                 Log.d("VTAG", "Connection request between thread execution")
             }
             Log.d("VTAG", "Con/Dis thread terminated")

@@ -148,6 +148,8 @@ class AlarmPingSender implements MqttPingSender {
 
 //			Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
 
+			Log.d(TAG, "Calculating Approximating Analyzing");
+
 			PowerManager pm = (PowerManager) service
 					.getSystemService(Service.POWER_SERVICE);
 			wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, wakeLockTag);

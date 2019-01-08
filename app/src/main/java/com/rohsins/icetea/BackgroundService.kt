@@ -25,7 +25,6 @@ class BackgroundService: Service() {
     private var serviceNotificationManager: NotificationManager? = null
     private var serviceAlive = false
     private val kSignalReceiver = KSignalReceiver()
-//    val connectivity = Connectivity()
 
     override fun onCreate() {
         super.onCreate()
@@ -59,6 +58,7 @@ class BackgroundService: Service() {
         startForeground(291, serviceNotificationBuilder!!.build())
         connectivity.configureAndConnectMqtt(applicationContext)
         EventBus.getDefault().register(this)
+//        KSignalTrigger(30000)
         return START_STICKY
     }
 
@@ -72,31 +72,11 @@ class BackgroundService: Service() {
         Handler().postDelayed({ connectivity.unconfigureAndDisconnectMqtt() }, 2000)
         unregisterReceiver(kSignalReceiver)
         EventBus.getDefault().unregister(this)
-
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val pendingIntent = PendingIntent.getForegroundService(
-                applicationContext, 0,
-                Intent(this, BackgroundService::class.java), PendingIntent.FLAG_ONE_SHOT
-            )
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, 3000, pendingIntent)
-        } else {
-            val pendingIntent = PendingIntent.getService(
-                applicationContext, 0,
-                Intent(this, BackgroundService::class.java), PendingIntent.FLAG_ONE_SHOT)
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, 3000, pendingIntent)
-        }
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         Log.d("VTAG", "onTaskRemoved")
         super.onTaskRemoved(rootIntent)
-//
-//        val filter = IntentFilter("KSignalReceiverFlag")
-//        registerReceiver(kSignalReceiver, filter)
-
-//        val intent = Intent("KSignalReceiverFlag")
-//        sendBroadcast(intent)
     }
 
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
@@ -104,9 +84,21 @@ class BackgroundService: Service() {
         Log.d("VTAG", "event message: ${event.mqttMessage}")
     }
 
+    fun KSignalTrigger(triggerTime: Long) {
+        val alarmManager = getSystemService(Service.ALARM_SERVICE) as AlarmManager
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 0, Intent("KSignalReceiverFlag"),
+            PendingIntent.FLAG_UPDATE_CURRENT)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + triggerTime, pendingIntent)
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + triggerTime, pendingIntent)
+        }
+    }
+
     inner class KSignalReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            startForeground(291, serviceNotificationBuilder!!.build())
+//            KSignalTrigger(30000)
             Log.d("VTAG", "KSignal Triggered")
         }
     }
