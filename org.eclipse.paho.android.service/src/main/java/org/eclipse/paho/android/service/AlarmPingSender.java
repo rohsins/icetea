@@ -184,8 +184,8 @@ class AlarmPingSender implements MqttPingSender {
 					MqttMessage mqttMsg = new MqttMessage();
 					mqttMsg.setQos(0);
 					mqttMsg.clearPayload();
-					mqttMsg.setPayload("00".getBytes());
-					comms.getClient().publish("RTSR&D/baanvak/pub/ping", mqttMsg, this, new IMqttActionListener() {
+					mqttMsg.setPayload("".getBytes());
+					comms.getClient().publish(" ", mqttMsg, this, new IMqttActionListener() {
 						@Override
 						public void onSuccess(IMqttToken asyncActionToken) {
 							pingThreshold = System.currentTimeMillis() + fKeepalive;

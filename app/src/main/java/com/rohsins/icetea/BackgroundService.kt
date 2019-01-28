@@ -37,14 +37,13 @@ class BackgroundService: Service() {
 
         serviceNotificationBuilder = NotificationCompat.Builder(this, serviceChannelId as String)
             .setSmallIcon(R.mipmap.icetea)
-            .setContentTitle("rohsins application")
-            .setContentText("oreo")
-            .setBadgeIconType(R.mipmap.icetea)
+//            .setContentTitle("rohsins application")
+//            .setContentText("oreo")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String {
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
         serviceNotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         serviceNotificationManager!!.createNotificationChannel(channel)
         return channelId
