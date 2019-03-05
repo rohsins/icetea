@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show()
             } else if (position == 1) {
-            } else if (position == 20 && serviceRunning) {
+            } else if (position == 2 && serviceRunning) {
                 serviceRunning = false
                 Intent(this, BackgroundService::class.java).also {intent ->
                     stopService(intent)

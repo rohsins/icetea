@@ -1,23 +1,18 @@
 package com.rohsins.icetea
 
 import android.content.Context
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
 
 private val mThumbIds = arrayOf<Int>(
-    R.drawable.sensor, R.drawable.sample_3,
-    R.drawable.sample_4, R.drawable.sample_5,
-    R.drawable.sample_6, R.drawable.sample_7,
-    R.drawable.sample_0, R.drawable.sample_1,
-    R.drawable.sample_2, R.drawable.sample_3,
-    R.drawable.sample_4, R.drawable.sample_5,
-    R.drawable.sample_6, R.drawable.sample_7,
-    R.drawable.sample_0, R.drawable.sample_1,
-    R.drawable.sample_2, R.drawable.sample_3,
-    R.drawable.sample_4, R.drawable.sample_5,
-    R.drawable.sample_6, R.drawable.settings)
+    R.drawable.lights, R.drawable.doors,
+    R.drawable.control, R.drawable.terminal,
+    R.drawable.cloud2, R.drawable.guitar,
+    R.drawable.logicboard, R.drawable.settings,
+    R.drawable.cloud, R.drawable.settings2)
 
 class ImageAdapter(private val mContext: Context): BaseAdapter() {
 
@@ -30,10 +25,14 @@ class ImageAdapter(private val mContext: Context): BaseAdapter() {
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val imageView: ImageView
         if (convertView == null) {
+            val fullWidth = mContext.resources.displayMetrics.widthPixels;
+            val gridWidth = (fullWidth - 80)/2
+            val gridHeight = gridWidth
             imageView = ImageView(mContext)
-            imageView.layoutParams = ViewGroup.LayoutParams(255, 255)
+            imageView.layoutParams = ViewGroup.LayoutParams(gridWidth, gridHeight)
             imageView.scaleType = ImageView.ScaleType.CENTER_CROP
-            imageView.setPadding(8, 8, 8, 8)
+            //imageView.setPadding(10, 10, 10, 10)
+            imageView.setBackgroundResource(R.drawable.button_style)
         } else {
             imageView = convertView as ImageView
         }

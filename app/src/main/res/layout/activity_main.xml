@@ -11,11 +11,11 @@
         android:id="@+id/gridView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:columnWidth="160dp"
         android:numColumns="auto_fit"
         android:verticalSpacing="10dp"
         android:horizontalSpacing="10dp"
         android:stretchMode="columnWidth"
+        android:layout_margin="10dp"
         android:gravity="center"/>
 
 </android.support.constraint.ConstraintLayout>
