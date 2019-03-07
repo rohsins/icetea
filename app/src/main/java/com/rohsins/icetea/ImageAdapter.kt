@@ -24,14 +24,10 @@ class ImageAdapter(private val mContext: Context): BaseAdapter() {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val imageView: ImageView
+        
         if (convertView == null) {
-            val fullWidth = mContext.resources.displayMetrics.widthPixels;
-            val gridWidth = (fullWidth - 80)/2
-            val gridHeight = gridWidth
             imageView = ImageView(mContext)
-            imageView.layoutParams = ViewGroup.LayoutParams(gridWidth, gridHeight)
-            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
-            //imageView.setPadding(10, 10, 10, 10)
+            imageView.adjustViewBounds = true
             imageView.setBackgroundResource(R.drawable.button_style)
         } else {
             imageView = convertView as ImageView
