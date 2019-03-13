@@ -40,7 +40,7 @@ dependencies {
     //    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
 //    implementation (name: 'org.eclipse.paho.android.service-release', ext: 'aar')
     implementation 'org.greenrobot:eventbus:3.1.1'
-    implementation (project(':org.eclipse.paho.android.service')) {
+    implementation(project(':org.eclipse.paho.android.service')) {
         transitive = true
     }
     testImplementation 'junit:junit:4.12'

@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show()
             } else if (position == 1) {
+                val intent = Intent(this, Lights::class.java)
+                startActivity(intent)
             } else if (position == 2 && serviceRunning) {
                 serviceRunning = false
                 Intent(this, BackgroundService::class.java).also {intent ->
