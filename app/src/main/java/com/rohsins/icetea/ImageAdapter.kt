@@ -1,7 +1,6 @@
 package com.rohsins.icetea
 
 import android.content.Context
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
@@ -28,7 +27,7 @@ class ImageAdapter(private val mContext: Context): BaseAdapter() {
         if (convertView == null) {
             imageView = ImageView(mContext)
             imageView.adjustViewBounds = true
-            imageView.setBackgroundResource(R.drawable.button_style)
+            imageView.setBackgroundResource(R.drawable.grid_view)
         } else {
             imageView = convertView as ImageView
         }

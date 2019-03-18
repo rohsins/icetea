@@ -7,43 +7,50 @@
         android:layout_height="match_parent"
         tools:context=".Lights">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:orientation="vertical">
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="2dp"></LinearLayout>
-
-        <LinearLayout android:layout_height="100dp" android:layout_width="match_parent"
+        <LinearLayout android:layout_height="100dp"
+                      android:layout_width="match_parent"
                       android:orientation="vertical"
-                      android:background="@drawable/button_style"
+                      android:background="@drawable/light_view"
                       android:layout_margin="10dp"
                       android:backgroundTint="#54C1E2">
 
             <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_margin="10dp"
                     android:orientation="horizontal">
 
                 <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:background="@drawable/lights"/>
+                        android:background="@drawable/lights"
+                        android:layout_weight="1"/>
 
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                          android:layout_marginLeft="10dp"
-                          android:text="Street Lamp 1" />
+                <TextView android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_marginStart="10dp"
+                          android:layout_weight="979"
+                          android:layout_gravity="center"
+                          android:textSize="20dp"
+                          android:text="Living Room" />
 
                 <Switch
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
-                        android:layout_marginLeft="180dp" />
+                        android:layout_weight="20" />
 
             </LinearLayout>
 
             <SeekBar android:layout_width="match_parent"
-                     android:layout_height="wrap_content"
+                     android:layout_height="10dp"
                      android:id="@+id/light_seekbar"
                      android:max="100"
                      android:splitTrack="false"
-                     android:layout_marginTop="30dp"
+                     android:layout_marginTop="19dp"
                      android:thumb="@drawable/light_thumb"
                      android:progressDrawable="@drawable/light_seekbar"/>
 

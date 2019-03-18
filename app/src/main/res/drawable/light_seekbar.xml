@@ -2,7 +2,4 @@
     <item
         android:id="@android:id/background"
         android:drawable="@drawable/seekbar_filler" />
-    <item android:id="@android:id/progress">
-        <clip android:drawable="@drawable/seekbar_filler" />
-    </item>
 </layer-list>
