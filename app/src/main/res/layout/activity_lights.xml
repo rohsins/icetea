@@ -18,8 +18,7 @@
             android:layout_width="match_parent"
             android:orientation="vertical"
             android:background="@drawable/light_view"
-            android:layout_margin="10dp"
-            android:backgroundTint="#54C1E2">
+            android:layout_margin="10dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
