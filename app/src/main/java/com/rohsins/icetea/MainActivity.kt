@@ -21,7 +21,10 @@ class MainActivity : AppCompatActivity() {
 
         gridView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             Toast.makeText(this, "$position", Toast.LENGTH_SHORT).show()
-            if (position == 0 && !serviceRunning) {
+            if (position == 0) {
+                val intent = Intent(this, Lights::class.java)
+                startActivity(intent)
+            } else if (position == 1 && !serviceRunning) {
                 serviceRunning = true
                 Intent(this, BackgroundService::class.java).also { intent ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -31,9 +34,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show()
-            } else if (position == 1) {
-                val intent = Intent(this, Lights::class.java)
-                startActivity(intent)
             } else if (position == 2 && serviceRunning) {
                 serviceRunning = false
                 Intent(this, BackgroundService::class.java).also {intent ->

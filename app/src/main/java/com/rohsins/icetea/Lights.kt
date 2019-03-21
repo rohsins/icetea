@@ -87,10 +87,25 @@ class Lights : AppCompatActivity() {
 
             linearLayoutElement.addView(linearLayoutSection1)
             linearLayoutElement.addView(seekBar)
+
+            setSeekOnChangeListener()
         }
 
         fun getLayout(): LinearLayout {
             return linearLayoutElement
+        }
+
+        private fun setSeekOnChangeListener() {
+            seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                }
+
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                }
+            })
         }
     }
 
@@ -111,26 +126,10 @@ class Lights : AppCompatActivity() {
 
         val firstElement = LightElement("Living Room", "#329582")
         val secondElement = LightElement("Bed Room", "#427431")
+        val thirdElement = LightElement("Bath Room", "#824491")
         linearLayout.removeAllViews()
         linearLayout.addView(firstElement.getLayout())
         linearLayout.addView(secondElement.getLayout())
-
-//        seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-//            @RequiresApi(Build.VERSION_CODES.O)
-//            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-//                tProgress = (progress.toFloat()/100)
-//                seekBar?.background?.setTint(ColorUtils.blendARGB(Color.parseColor("#54C1E2"), Color.parseColor("#FFFFFF"), tProgress))
-//                Toast.makeText(this@Lights, progress.toString(), Toast.LENGTH_SHORT).show()
-//            }
-//
-//            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-////                seekBar?.setBackgroundColor(Color.parseColor("#00ff00"))
-//            }
-//
-//            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-////                seekBar?.setBackgroundColor(Color.parseColor("#0000ff"))
-//            }
-//
-//        })
+        linearLayout.addView(thirdElement.getLayout())
     }
 }
