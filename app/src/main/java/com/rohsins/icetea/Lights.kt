@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.support.v4.graphics.ColorUtils
 import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
+import android.view.View
 import android.widget.*
 
 class Lights : AppCompatActivity() {
@@ -37,14 +38,16 @@ class Lights : AppCompatActivity() {
         private val seekBarLayoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(20)
         )
+        private val previousColor: String
 
         constructor(lightName: String, lightColor: String = "#59C1D2") {
+            previousColor = lightColor
 
             layoutParamsElement.setMargins(dp(10), dp(10), dp(10), dp(10))
             linearLayoutElement.layoutParams = layoutParamsElement
             linearLayoutElement.orientation = LinearLayout.VERTICAL
             linearLayoutElement.background = getDrawable(R.drawable.light_view)
-            linearLayoutElement.background.setTint(Color.parseColor(lightColor))
+//            linearLayoutElement.background.setTint(Color.parseColor(lightColor))
 
             layoutParamsSection1.setMargins(dp(10), dp(10), dp(10), dp(10))
             linearLayoutSection1.layoutParams = layoutParamsSection1
@@ -58,6 +61,7 @@ class Lights : AppCompatActivity() {
             textView.textSize = 20f
             textView.text = lightName
             textView.layoutParams = textViewLayoutParams
+            textView.setTextColor(Color.parseColor("#000000"))
 
             switch.layoutParams = switchLayoutParams
 
@@ -71,28 +75,60 @@ class Lights : AppCompatActivity() {
             seekBar.splitTrack = false
             seekBar.thumb = getDrawable(R.drawable.light_thumb)
             seekBar.progressDrawable = getDrawable(R.drawable.none)
+//            val gradientDrawable = GradientDrawable(
+//                GradientDrawable.Orientation.LEFT_RIGHT,
+//                intArrayOf(
+//                    Color.parseColor(lightColor),
+//                    ColorUtils.blendARGB(
+//                        Color.parseColor(lightColor),
+//                        Color.parseColor("#FFFFFF"),
+//                        0.4.toFloat()
+//                    )
+//                )
+//            )
+//            gradientDrawable.cornerRadius = dp(6).toFloat()
+//            seekBar.background = gradientDrawable
+            changeColor(lightColor)
+
+            linearLayoutElement.addView(linearLayoutSection1)
+            linearLayoutElement.addView(seekBar)
+
+            switch.isChecked = true
+
+            setSeekOnChangeListener()
+            setSwitchOnChangeListener()
+            setOnLongPress()
+        }
+
+        fun getLayout(): LinearLayout {
+            return linearLayoutElement
+        }
+
+        fun changeColor(color: String) {
+            linearLayoutElement.background.setTint(Color.parseColor(color))
             val gradientDrawable = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 intArrayOf(
-                    Color.parseColor(lightColor),
+                    Color.parseColor(color),
                     ColorUtils.blendARGB(
-                        Color.parseColor(lightColor),
+                        Color.parseColor(color),
                         Color.parseColor("#FFFFFF"),
-                        0.3.toFloat()
+                        0.4.toFloat()
                     )
                 )
             )
             gradientDrawable.cornerRadius = dp(6).toFloat()
             seekBar.background = gradientDrawable
-
-            linearLayoutElement.addView(linearLayoutSection1)
-            linearLayoutElement.addView(seekBar)
-
-            setSeekOnChangeListener()
         }
 
-        fun getLayout(): LinearLayout {
-            return linearLayoutElement
+        private fun disableLight() {
+            textView.setTextColor(Color.parseColor("#FFFFFF"))
+            changeColor("#040404")
+        }
+
+        private fun enableLight() {
+            textView.setTextColor(Color.parseColor("#000000"))
+            changeColor(previousColor)
         }
 
         private fun setSeekOnChangeListener() {
@@ -104,8 +140,26 @@ class Lights : AppCompatActivity() {
                 }
 
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                    Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
                 }
             })
+        }
+
+        private fun setSwitchOnChangeListener() {
+            switch.setOnCheckedChangeListener { buttonView, isChecked ->
+                if (!isChecked) {
+                    disableLight()
+                } else {
+                    enableLight()
+                }
+            }
+        }
+
+        private fun setOnLongPress() {
+            linearLayoutSection1.setOnLongClickListener {
+                Toast.makeText(this@Lights, "Color picker is gonna come up", Toast.LENGTH_SHORT).show()
+                true
+            }
         }
     }
 
@@ -127,6 +181,7 @@ class Lights : AppCompatActivity() {
         val firstElement = LightElement("Living Room", "#329582")
         val secondElement = LightElement("Bed Room", "#427431")
         val thirdElement = LightElement("Bath Room", "#824491")
+
         linearLayout.removeAllViews()
         linearLayout.addView(firstElement.getLayout())
         linearLayout.addView(secondElement.getLayout())
