@@ -123,12 +123,16 @@ class Lights : AppCompatActivity() {
 
         private fun disableLight() {
             textView.setTextColor(Color.parseColor("#FFFFFF"))
-            changeColor("#040404")
+            changeColor("#505050")
+            linearLayoutElement.removeView(seekBar)
+            linearLayoutElement.layoutParams.height = dp(80)
         }
 
         private fun enableLight() {
             textView.setTextColor(Color.parseColor("#000000"))
             changeColor(previousColor)
+            linearLayoutElement.addView(seekBar)
+            linearLayoutElement.layoutParams.height = dp(100)
         }
 
         private fun setSeekOnChangeListener() {
