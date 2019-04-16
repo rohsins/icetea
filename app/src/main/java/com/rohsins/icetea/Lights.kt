@@ -1,5 +1,7 @@
 package com.rohsins.icetea
 
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -8,6 +10,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
 import android.view.View
 import android.widget.*
+import com.rarepebble.colorpicker.ColorPickerView
 
 class Lights : AppCompatActivity() {
 
@@ -38,7 +41,7 @@ class Lights : AppCompatActivity() {
         private val seekBarLayoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(20)
         )
-        private val previousColor: String
+        private var previousColor: String
 
         constructor(lightName: String, lightColor: String = "#59C1D2") {
             previousColor = lightColor
@@ -75,19 +78,6 @@ class Lights : AppCompatActivity() {
             seekBar.splitTrack = false
             seekBar.thumb = getDrawable(R.drawable.light_thumb)
             seekBar.progressDrawable = getDrawable(R.drawable.none)
-//            val gradientDrawable = GradientDrawable(
-//                GradientDrawable.Orientation.LEFT_RIGHT,
-//                intArrayOf(
-//                    Color.parseColor(lightColor),
-//                    ColorUtils.blendARGB(
-//                        Color.parseColor(lightColor),
-//                        Color.parseColor("#FFFFFF"),
-//                        0.4.toFloat()
-//                    )
-//                )
-//            )
-//            gradientDrawable.cornerRadius = dp(6).toFloat()
-//            seekBar.background = gradientDrawable
             changeColor(lightColor)
 
             linearLayoutElement.addView(linearLayoutSection1)
@@ -161,8 +151,29 @@ class Lights : AppCompatActivity() {
 
         private fun setOnLongPress() {
             linearLayoutSection1.setOnLongClickListener {
-                Toast.makeText(this@Lights, "Color picker is gonna come up", Toast.LENGTH_SHORT).show()
-                true
+                if (switch.isChecked) {
+                    val colorPickerView = ColorPickerView(this@Lights)
+                    colorPickerView.color = Color.parseColor(previousColor)
+                    colorPickerView.showHex(false)
+                    colorPickerView.showAlpha(false)
+                    colorPickerView.showPreview(true)
+
+                    val alertDialogBuilder = AlertDialog.Builder(this@Lights)
+                    alertDialogBuilder.setPositiveButton("OK") { dialog, which ->
+                        previousColor = '#' + colorPickerView.color.toUInt().toString(16)
+                        changeColor(previousColor)
+                    }
+                    alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
+                        Toast.makeText(this@Lights, "Cancel", Toast.LENGTH_SHORT).show()
+                    }
+                    val alertDialog = alertDialogBuilder.create()
+                    alertDialog.setView(colorPickerView)
+                    alertDialog.show()
+
+                    true
+                } else {
+                    true
+                }
             }
         }
     }

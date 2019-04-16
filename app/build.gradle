@@ -26,6 +26,7 @@ repositories {
     maven {
         url "https://repo.eclipse.org/content/repositories/paho-snapshots/"
     }
+    maven { url 'https://jitpack.io' }
 //    flatDir {
 //        dirs 'libs'
 //    }
@@ -43,6 +44,7 @@ dependencies {
     implementation(project(':org.eclipse.paho.android.service')) {
         transitive = true
     }
+    implementation 'com.rarepebble:colorpicker:2.2.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
