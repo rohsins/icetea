@@ -169,11 +169,8 @@ class Lights : AppCompatActivity() {
                     val alertDialog = alertDialogBuilder.create()
                     alertDialog.setView(colorPickerView)
                     alertDialog.show()
-
-                    true
-                } else {
-                    true
                 }
+                true
             }
         }
     }
