@@ -118,7 +118,7 @@ publishing {
 }
 
 
-task debug << {
+task debug {
     configurations.compile.each { println it}
 }
 // Required to bundle Java library Jar in AAR
