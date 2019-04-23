@@ -7,10 +7,14 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.support.v4.graphics.ColorUtils
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.*
 import com.rarepebble.colorpicker.ColorPickerView
+import com.rohsins.icetea.DataModel.Light
+import com.rohsins.icetea.DataModel.LightDao
+import com.rohsins.icetea.DataModel.LightDatabase
 
 class Lights : AppCompatActivity() {
 
@@ -175,9 +179,19 @@ class Lights : AppCompatActivity() {
         }
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        setContentView(R.layout.activity_lights)
+
+        val lightDao = LightDatabase.getInstance(this@Lights).lightDao()
+
+//        var light = Light(123, "hello", 3, 93)
+//        light.lightAlias = "something"
+//        lightDao.insertLight(light)
+
+        var rlight = lightDao.getLightById()
+        Log.i("VTAG", rlight.get(0).lightAlias);
 
         val linearLayout = LinearLayout(this)
         val layoutParams = LinearLayout.LayoutParams(
@@ -198,5 +212,10 @@ class Lights : AppCompatActivity() {
         linearLayout.addView(firstElement.getLayout())
         linearLayout.addView(secondElement.getLayout())
         linearLayout.addView(thirdElement.getLayout())
+
+
+//        rlight.forEach {
+//            Light
+//        }
     }
 }
