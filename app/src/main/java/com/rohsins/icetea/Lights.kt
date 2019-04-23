@@ -47,14 +47,13 @@ class Lights : AppCompatActivity() {
         )
         private var previousColor: String
 
-        constructor(lightName: String, lightColor: String = "#59C1D2") {
+        constructor(lightName: String, isChecked: Boolean, intensity: Int, lightColor: String = "#59C1D2") {
             previousColor = lightColor
 
             layoutParamsElement.setMargins(dp(10), dp(10), dp(10), dp(10))
             linearLayoutElement.layoutParams = layoutParamsElement
             linearLayoutElement.orientation = LinearLayout.VERTICAL
             linearLayoutElement.background = getDrawable(R.drawable.light_view)
-//            linearLayoutElement.background.setTint(Color.parseColor(lightColor))
 
             layoutParamsSection1.setMargins(dp(10), dp(10), dp(10), dp(10))
             linearLayoutSection1.layoutParams = layoutParamsSection1
@@ -79,6 +78,7 @@ class Lights : AppCompatActivity() {
             seekBarLayoutParams.topMargin = dp(20)
             seekBar.layoutParams = seekBarLayoutParams
             seekBar.max = 100
+            seekBar.progress = intensity
             seekBar.splitTrack = false
             seekBar.thumb = getDrawable(R.drawable.light_thumb)
             seekBar.progressDrawable = getDrawable(R.drawable.none)
@@ -87,7 +87,9 @@ class Lights : AppCompatActivity() {
             linearLayoutElement.addView(linearLayoutSection1)
             linearLayoutElement.addView(seekBar)
 
-            switch.isChecked = true
+            switch.isChecked = isChecked
+
+            if (!isChecked) disableLight()
 
             setSeekOnChangeListener()
             setSwitchOnChangeListener()
@@ -182,16 +184,25 @@ class Lights : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        setContentView(R.layout.activity_lights)
 
         val lightDao = LightDatabase.getInstance(this@Lights).lightDao()
 
-//        var light = Light(123, "hello", 3, 93)
-//        light.lightAlias = "something"
+//        var light = Light(123, "hello", false, 93, "#329582")
+//        light.uid = 1
+//        light.alias = "kitchen"
+//        light.isChecked = false
+//        light.intensity = 23
+//        light.color = "#123456"
+//        lightDao.insertLight(light)
+//        light.uid = 2
+//        light.alias = "bedroom"
+//        light.isChecked = false
+//        light.intensity = 23
+//        light.color = "#329213"
 //        lightDao.insertLight(light)
 
         var rlight = lightDao.getLightById()
-        Log.i("VTAG", rlight.get(0).lightAlias);
+        Log.i("VTAG", rlight.get(0).alias);
 
         val linearLayout = LinearLayout(this)
         val layoutParams = LinearLayout.LayoutParams(
@@ -204,18 +215,19 @@ class Lights : AppCompatActivity() {
 
         setContentView(linearLayout)
 
-        val firstElement = LightElement("Living Room", "#329582")
-        val secondElement = LightElement("Bed Room", "#427431")
-        val thirdElement = LightElement("Bath Room", "#824491")
+//        val firstElement = LightElement("Living Room", "#329582")
+//        val secondElement = LightElement("Bed Room", "#427431")
+//        val thirdElement = LightElement("Bath Room", "#824491")
 
         linearLayout.removeAllViews()
-        linearLayout.addView(firstElement.getLayout())
-        linearLayout.addView(secondElement.getLayout())
-        linearLayout.addView(thirdElement.getLayout())
+//        linearLayout.addView(firstElement.getLayout())
+//        linearLayout.addView(secondElement.getLayout())
+//        linearLayout.addView(thirdElement.getLayout())
 
 
-//        rlight.forEach {
-//            Light
-//        }
+        rlight.forEach {
+            var lightObject = LightElement(it.alias, it.isChecked, it.intensity, it.color)
+            linearLayout.addView(lightObject.getLayout())
+        }
     }
 }

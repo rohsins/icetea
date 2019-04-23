@@ -10,9 +10,11 @@ data class Light (
     @ColumnInfo(name = "uid")
     var uid: Int,
     @ColumnInfo(name = "lightAlias")
-    var lightAlias: String,
+    var alias: String,
     @ColumnInfo(name = "switchValue")
-    var switchValue: Int,
+    var isChecked: Boolean,
     @ColumnInfo(name = "lightIntensity")
-    var lightIntensity: Int
+    var intensity: Int,
+    @ColumnInfo(name = "lightColor")
+    var color: String
 )
