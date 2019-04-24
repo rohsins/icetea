@@ -5,7 +5,7 @@ import android.arch.persistence.room.Room
 import android.arch.persistence.room.RoomDatabase
 import android.content.Context
 
-@Database(entities = arrayOf(Light::class), version = 2, exportSchema = false)
+@Database(entities = arrayOf(Light::class), version = 4, exportSchema = false)
 abstract class LightDatabase: RoomDatabase() {
     abstract fun lightDao(): LightDao
     companion object {

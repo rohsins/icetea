@@ -6,9 +6,9 @@ import android.arch.persistence.room.ColumnInfo
 
 @Entity(tableName = "Light")
 data class Light (
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "uid")
-    var uid: Int,
+    @PrimaryKey(autoGenerate = false)
+    @ColumnInfo(name = "id")
+    var id: String,
     @ColumnInfo(name = "lightAlias")
     var alias: String,
     @ColumnInfo(name = "switchValue")

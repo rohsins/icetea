@@ -1,17 +1,17 @@
 package com.rohsins.icetea.DataModel
 
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.OnConflictStrategy
-import android.arch.persistence.room.Query
+import android.arch.persistence.room.*
 
 @Dao
 interface LightDao {
     @Query("SELECT * from Light")
-    fun getLightById(): List<Light>
+    fun getAllLight(): List<Light>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertLight(light: Light)
+
+    @Update
+    fun updateLight(light: Light)
 
     @Query("DELETE From Light")
     fun deleteAllLights()

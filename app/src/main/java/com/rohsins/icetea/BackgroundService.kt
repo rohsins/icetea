@@ -12,9 +12,15 @@ import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import android.util.Log
+import android.widget.LinearLayout
+import com.rohsins.icetea.DataModel.Light
+import com.rohsins.icetea.DataModel.LightDao
+import com.rohsins.icetea.DataModel.LightDatabase
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import org.json.JSONObject
+import java.lang.Exception
 
 @SuppressLint("StaticFieldLeak")
 val connectivity: Connectivity = Connectivity()
@@ -81,6 +87,28 @@ class BackgroundService: Service() {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     fun onMessage(event: MessageEvent) {
         Log.d("VTAG", "event message: ${event.mqttMessage}")
+        try {
+            val jsonFile = JSONObject(event.mqttMessage.toString())
+            val essential = jsonFile.getJSONObject("essential")
+            val subscriberudi = essential.getString("subscriberudi")
+            val payloadType = essential.getString("payloadType")
+            val payload = essential.getJSONObject("payload")
+            val thingCode = payload.getInt("thingCode")
+            if (thingCode == 137 && payloadType.contentEquals("commandReply")) {
+                val lightDao = LightDatabase.getInstance(this).lightDao()
+                lightDao.updateLight(
+                    Light(
+                        subscriberudi,
+                        payload.getString("alias"),
+                        payload.getBoolean("isChecked"),
+                        payload.getInt("intensity"),
+                        payload.getString("color")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun KSignalTrigger(triggerTime: Long) {

@@ -1,15 +1,12 @@
 package com.rohsins.icetea
 
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.support.v4.graphics.ColorUtils
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.view.Gravity
-import android.view.View
 import android.widget.*
 import com.rarepebble.colorpicker.ColorPickerView
 import com.rohsins.icetea.DataModel.Light
@@ -18,12 +15,20 @@ import com.rohsins.icetea.DataModel.LightDatabase
 
 class Lights : AppCompatActivity() {
 
+    private lateinit var lightDao: LightDao
+
     private fun dp(dp: Int): Int {
         val density = resources.displayMetrics.density
         return Math.round(dp.toFloat() * density)
     }
 
     inner class LightElement {
+        private var id: String
+        private var lightName: String
+        private var isChecked: Boolean
+        private var intensity: Int
+        private var lightColor: String
+
         private val linearLayoutElement = LinearLayout(this@Lights)
         private val layoutParamsElement = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(100))
         private val linearLayoutSection1 = LinearLayout(this@Lights)
@@ -47,7 +52,13 @@ class Lights : AppCompatActivity() {
         )
         private var previousColor: String
 
-        constructor(lightName: String, isChecked: Boolean, intensity: Int, lightColor: String = "#59C1D2") {
+        constructor(id: String, lightName: String, isChecked: Boolean, intensity: Int, lightColor: String = "#59C1D2") {
+            this.id = id
+            this.lightName = lightName
+            this.isChecked = isChecked
+            this.intensity = intensity
+            this.lightColor = lightColor
+
             previousColor = lightColor
 
             layoutParamsElement.setMargins(dp(10), dp(10), dp(10), dp(10))
@@ -140,18 +151,22 @@ class Lights : AppCompatActivity() {
                 }
 
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                    this@LightElement.intensity = seekBar!!.progress
                     Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
+                    lightDao.updateLight(Light(this@LightElement.id, this@LightElement.lightName, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.lightColor))
                 }
             })
         }
 
         private fun setSwitchOnChangeListener() {
             switch.setOnCheckedChangeListener { buttonView, isChecked ->
+                this.isChecked = isChecked
                 if (!isChecked) {
                     disableLight()
                 } else {
                     enableLight()
                 }
+                lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
             }
         }
 
@@ -167,7 +182,9 @@ class Lights : AppCompatActivity() {
                     val alertDialogBuilder = AlertDialog.Builder(this@Lights)
                     alertDialogBuilder.setPositiveButton("OK") { dialog, which ->
                         previousColor = '#' + colorPickerView.color.toUInt().toString(16)
+                        this.lightColor = previousColor
                         changeColor(previousColor)
+                        lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
                         Toast.makeText(this@Lights, "Cancel", Toast.LENGTH_SHORT).show()
@@ -185,24 +202,18 @@ class Lights : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val lightDao = LightDatabase.getInstance(this@Lights).lightDao()
+        lightDao = LightDatabase.getInstance(this@Lights).lightDao()
 
-//        var light = Light(123, "hello", false, 93, "#329582")
-//        light.uid = 1
-//        light.alias = "kitchen"
-//        light.isChecked = false
-//        light.intensity = 23
-//        light.color = "#123456"
+//        var light = Light("1", "kitchen", false, 93, "#329582")
 //        lightDao.insertLight(light)
-//        light.uid = 2
+//        light.id = "2"
 //        light.alias = "bedroom"
 //        light.isChecked = false
 //        light.intensity = 23
 //        light.color = "#329213"
 //        lightDao.insertLight(light)
 
-        var rlight = lightDao.getLightById()
-        Log.i("VTAG", rlight.get(0).alias);
+        var rlight = lightDao.getAllLight()
 
         val linearLayout = LinearLayout(this)
         val layoutParams = LinearLayout.LayoutParams(
@@ -226,7 +237,7 @@ class Lights : AppCompatActivity() {
 
 
         rlight.forEach {
-            var lightObject = LightElement(it.alias, it.isChecked, it.intensity, it.color)
+            var lightObject = LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color)
             linearLayout.addView(lightObject.getLayout())
         }
     }
