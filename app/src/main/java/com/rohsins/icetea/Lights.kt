@@ -4,14 +4,19 @@ import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.graphics.ColorUtils
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.Gravity
 import android.widget.*
 import com.rarepebble.colorpicker.ColorPickerView
 import com.rohsins.icetea.DataModel.Light
 import com.rohsins.icetea.DataModel.LightDao
 import com.rohsins.icetea.DataModel.LightDatabase
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 class Lights : AppCompatActivity() {
 
@@ -198,6 +203,19 @@ class Lights : AppCompatActivity() {
         }
     }
 
+    lateinit var linearLayout: LinearLayout
+
+    val renderHandler = Handler()
+    val renderRunnable = Runnable {
+        var rlight = lightDao.getAllLight()
+
+        linearLayout.removeAllViews()
+
+        rlight.forEach {
+            var lightObject = LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color)
+            linearLayout.addView(lightObject.getLayout())
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -213,9 +231,7 @@ class Lights : AppCompatActivity() {
 //        light.color = "#329213"
 //        lightDao.insertLight(light)
 
-        var rlight = lightDao.getAllLight()
-
-        val linearLayout = LinearLayout(this)
+        linearLayout = LinearLayout(this)
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.MATCH_PARENT
@@ -230,15 +246,24 @@ class Lights : AppCompatActivity() {
 //        val secondElement = LightElement("Bed Room", "#427431")
 //        val thirdElement = LightElement("Bath Room", "#824491")
 
-        linearLayout.removeAllViews()
+
 //        linearLayout.addView(firstElement.getLayout())
 //        linearLayout.addView(secondElement.getLayout())
 //        linearLayout.addView(thirdElement.getLayout())
 
+        renderHandler.post(renderRunnable)
 
-        rlight.forEach {
-            var lightObject = LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color)
-            linearLayout.addView(lightObject.getLayout())
-        }
+        EventBus.getDefault().register(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        EventBus.getDefault().unregister(this)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onMessage(event: MessageEvent) {
+        Log.d("VTAG", "event message from main: ${event.mqttMessage}")
+        renderHandler.post(renderRunnable)
     }
 }
