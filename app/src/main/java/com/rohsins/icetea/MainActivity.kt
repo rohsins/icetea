@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity
 import android.widget.AdapterView
 import android.widget.GridView
 import android.widget.Toast
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -16,7 +17,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val gridView: GridView = findViewById(R.id.gridView)
         gridView.adapter = ImageAdapter(this)
 
         gridView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->

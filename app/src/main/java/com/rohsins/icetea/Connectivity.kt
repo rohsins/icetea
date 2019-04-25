@@ -184,8 +184,8 @@ class Connectivity : BroadcastReceiver() {
                 }
 
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
-                    Log.d("VTAG", message.toString())
-                    mqttPublish("Message Acknowledged from $udi".toByteArray())
+//                    Log.d("VTAG", message.toString())
+//                    mqttPublish("Message Acknowledged from $udi".toByteArray())
                     MessageEvent.mqttMessage = message
                     MessageEvent.mqttTopic = topic
                     EventBus.getDefault().post(MessageEvent)

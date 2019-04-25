@@ -17,6 +17,7 @@ import com.rohsins.icetea.DataModel.LightDatabase
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import org.json.JSONObject
 
 class Lights : AppCompatActivity() {
 
@@ -159,6 +160,7 @@ class Lights : AppCompatActivity() {
                     this@LightElement.intensity = seekBar!!.progress
                     Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
                     lightDao.updateLight(Light(this@LightElement.id, this@LightElement.lightName, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.lightColor))
+                    lightSend()
                 }
             })
         }
@@ -172,6 +174,7 @@ class Lights : AppCompatActivity() {
                     enableLight()
                 }
                 lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
+                lightSend()
             }
         }
 
@@ -190,6 +193,7 @@ class Lights : AppCompatActivity() {
                         this.lightColor = previousColor
                         changeColor(previousColor)
                         lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
+                        lightSend()
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
                         Toast.makeText(this@Lights, "Cancel", Toast.LENGTH_SHORT).show()
@@ -200,6 +204,22 @@ class Lights : AppCompatActivity() {
                 }
                 true
             }
+        }
+
+        private fun lightSend() {
+            val payload = JSONObject()
+            payload.put("thingCode", 192)
+            payload.put("alias", this.lightName)
+            payload.put("isChecked", this.isChecked)
+            payload.put("intensity", this.intensity)
+            payload.put("color", this.lightColor)
+            val essential = JSONObject()
+            essential.put("publisherudi", "TestSequence1801")
+            essential.put("payloadType", "command")
+            essential.put("payload", payload)
+            val packedJson = JSONObject()
+            packedJson.put("essential", essential)
+            connectivity.mqttPublish(packedJson.toString().toByteArray())
         }
     }
 
