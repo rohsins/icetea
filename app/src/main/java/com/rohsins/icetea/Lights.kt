@@ -116,7 +116,7 @@ class Lights : AppCompatActivity() {
             return linearLayoutElement
         }
 
-        fun changeColor(color: String) {
+        private fun changeColor(color: String) {
             linearLayoutElement.background.setTint(Color.parseColor(color))
             val gradientDrawable = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
@@ -203,16 +203,16 @@ class Lights : AppCompatActivity() {
         }
     }
 
-    lateinit var linearLayout: LinearLayout
+    private lateinit var linearLayout: LinearLayout
 
-    val renderHandler = Handler()
-    val renderRunnable = Runnable {
-        var rlight = lightDao.getAllLight()
+    private val renderHandler = Handler()
+    private val renderRunnable = Runnable {
+        val rlight = lightDao.getAllLight()
 
         linearLayout.removeAllViews()
 
         rlight.forEach {
-            var lightObject = LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color)
+            val lightObject = LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color)
             linearLayout.addView(lightObject.getLayout())
         }
     }

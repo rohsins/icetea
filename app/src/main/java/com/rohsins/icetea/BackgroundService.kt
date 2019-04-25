@@ -86,7 +86,7 @@ class BackgroundService: Service() {
 
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     fun onMessage(event: MessageEvent) {
-        Log.d("VTAG", "event message: ${event.mqttMessage}")
+//        Log.d("VTAG", "event message: ${event.mqttMessage}")
         try {
             val jsonFile = JSONObject(event.mqttMessage.toString())
             val essential = jsonFile.getJSONObject("essential")
