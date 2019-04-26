@@ -229,6 +229,9 @@ class Lights : AppCompatActivity() {
     private val renderRunnable = Runnable {
         val rlight = lightDao.getAllLight()
 
+        linearLayout.invalidate()
+        linearLayout.requestLayout()
+        linearLayout.forceLayout()
         linearLayout.removeAllViews()
 
         rlight.forEach {
