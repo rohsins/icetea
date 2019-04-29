@@ -224,15 +224,19 @@ class Lights : AppCompatActivity() {
     }
 
     private lateinit var linearLayout: LinearLayout
+    private lateinit var scrollView: ScrollView
 
     private val renderHandler = Handler()
 
     private val renderRunnable = Runnable {
         linearLayout.removeAllViews()
+        scrollView.removeAllViews()
 
         lightDao.getAllLight().forEach {
             linearLayout.addView(LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color).getLayout())
         }
+
+        scrollView.addView(linearLayout)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -250,15 +254,18 @@ class Lights : AppCompatActivity() {
 //        lightDao.insertLight(light)
 
         linearLayout = LinearLayout(this)
+        scrollView = ScrollView(this)
+
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.MATCH_PARENT
         )
-//        layoutParams.setMargins(dp(10), dp(10), dp(10), dp(10))
+
         linearLayout.layoutParams = layoutParams
         linearLayout.orientation = LinearLayout.VERTICAL
 
-        setContentView(linearLayout)
+        scrollView.addView(linearLayout)
+        setContentView(scrollView)
 
 //        val firstElement = LightElement("Living Room", "#329582")
 //        val secondElement = LightElement("Bed Room", "#427431")
