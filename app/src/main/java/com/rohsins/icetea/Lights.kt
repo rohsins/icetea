@@ -226,17 +226,12 @@ class Lights : AppCompatActivity() {
     private lateinit var linearLayout: LinearLayout
 
     private val renderHandler = Handler()
-    private val renderRunnable = Runnable {
-        val rlight = lightDao.getAllLight()
 
-        linearLayout.invalidate()
-        linearLayout.requestLayout()
-        linearLayout.forceLayout()
+    private val renderRunnable = Runnable {
         linearLayout.removeAllViews()
 
-        rlight.forEach {
-            val lightObject = LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color)
-            linearLayout.addView(lightObject.getLayout())
+        lightDao.getAllLight().forEach {
+            linearLayout.addView(LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color).getLayout())
         }
     }
 
@@ -319,6 +314,6 @@ class Lights : AppCompatActivity() {
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onMessage(event: MessageEvent) {
         Log.d("VTAG", "event message from main: ${event.mqttMessage}")
-        renderHandler.post(renderRunnable)
+        renderHandler.postDelayed(renderRunnable, 100)
     }
 }
