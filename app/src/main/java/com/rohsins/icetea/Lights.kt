@@ -17,6 +17,7 @@ import com.rohsins.icetea.DataModel.LightDatabase
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import org.json.JSONArray
 import org.json.JSONObject
 
 class Lights : AppCompatActivity() {
@@ -215,6 +216,9 @@ class Lights : AppCompatActivity() {
             payload.put("color", this.lightColor)
             val essential = JSONObject()
             essential.put("publisherudi", udi)
+            val targetSubscriber = JSONArray()
+            targetSubscriber.put(this.id)
+            essential.put("targetSubscriber", targetSubscriber)
             essential.put("payloadType", "command")
             essential.put("payload", payload)
             val packedJson = JSONObject()
