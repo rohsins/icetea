@@ -208,13 +208,13 @@ class Lights : AppCompatActivity() {
 
         private fun lightSend() {
             val payload = JSONObject()
-            payload.put("thingCode", 192)
-            payload.put("alias", this.lightName)
+            payload.put("thingCode", thingCode)
+            // payload.put("alias", this.lightName)
             payload.put("isChecked", this.isChecked)
             payload.put("intensity", this.intensity)
             payload.put("color", this.lightColor)
             val essential = JSONObject()
-            essential.put("publisherudi", "TestSequence1801")
+            essential.put("publisherudi", udi)
             essential.put("payloadType", "command")
             essential.put("payload", payload)
             val packedJson = JSONObject()

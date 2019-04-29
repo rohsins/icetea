@@ -13,6 +13,9 @@ interface LightDao {
     @Update
     fun updateLight(light: Light)
 
+    @Query("DELETE From Light WHERE id = :udi")
+    fun deleteLight(udi: String)
+
     @Query("DELETE From Light")
     fun deleteAllLights()
 }

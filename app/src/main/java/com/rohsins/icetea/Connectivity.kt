@@ -20,9 +20,10 @@ private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
 private const val mqttClientId = "rohsinsOKotlinW1" // Arbitrary
 private const val mqttUserName = "rts" // fixed
 private const val mqttPassword = "rts" // fixed
-private const val udi = "TestSequence1801" // Arbitrary
-private const val subscribeTopic = "android/sub/$udi" // fixed
-private const val publishTopic = "android/pub/$udi" // fixed
+const val udi = "710829d688052940" // Arbitrary
+const val thingCode = 12001 //androidMobile
+private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
+private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
 private var mqttConfigured = false
 private var connectRequest = false
 
