@@ -187,6 +187,10 @@ class Lights : AppCompatActivity() {
                     colorPickerView.showHex(false)
                     colorPickerView.showAlpha(false)
                     colorPickerView.showPreview(true)
+                    colorPickerView.addColorObserver {
+                        this.lightColor = '#' + it.color.toUInt().toString(16)
+                        lightSend()
+                    }
 
                     val alertDialogBuilder = AlertDialog.Builder(this@Lights)
                     alertDialogBuilder.setPositiveButton("OK") { dialog, which ->
