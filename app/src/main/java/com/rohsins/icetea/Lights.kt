@@ -188,8 +188,11 @@ class Lights : AppCompatActivity() {
                     colorPickerView.showAlpha(false)
                     colorPickerView.showPreview(true)
                     colorPickerView.addColorObserver {
-                        this.lightColor = '#' + it.color.toUInt().toString(16)
-                        lightSend()
+                        val previewColor = '#' + it.color.toUInt().toString(16)
+                        if (this.lightColor != previewColor) {
+                            this.lightColor = previewColor
+                            lightSend()
+                        }
                     }
 
                     val alertDialogBuilder = AlertDialog.Builder(this@Lights)
