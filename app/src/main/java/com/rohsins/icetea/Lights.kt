@@ -1,6 +1,7 @@
 package com.rohsins.icetea
 
 import android.app.AlertDialog
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -95,7 +96,7 @@ class Lights : AppCompatActivity() {
 
             seekBarLayoutParams.topMargin = dp(20)
             seekBar.layoutParams = seekBarLayoutParams
-            seekBar.max = 100
+            seekBar.max = 255
             seekBar.progress = intensity
             seekBar.splitTrack = false
             seekBar.thumb = getDrawable(R.drawable.light_thumb)
@@ -152,16 +153,18 @@ class Lights : AppCompatActivity() {
         private fun setSeekOnChangeListener() {
             seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    this@LightElement.intensity = seekBar!!.progress
+                    lightSend(0)
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
                 }
 
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                    this@LightElement.intensity = seekBar!!.progress
-                    Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
+//                    this@LightElement.intensity = seekBar!!.progress
+//                    Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
                     lightDao.updateLight(Light(this@LightElement.id, this@LightElement.lightName, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.lightColor))
-                    lightSend()
+                    lightSend(2)
                 }
             })
         }
@@ -175,12 +178,13 @@ class Lights : AppCompatActivity() {
                     enableLight()
                 }
                 lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
-                lightSend()
+                lightSend(2)
             }
         }
 
         private fun setOnLongPress() {
             linearLayoutSection1.setOnLongClickListener {
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                 if (switch.isChecked) {
                     val colorPickerView = ColorPickerView(this@Lights)
                     colorPickerView.color = Color.parseColor(previousColor)
@@ -191,20 +195,33 @@ class Lights : AppCompatActivity() {
                         val previewColor = '#' + it.color.toUInt().toString(16)
                         if (this.lightColor != previewColor) {
                             this.lightColor = previewColor
-                            lightSend()
+                            lightSend(0)
                         }
                     }
 
                     val alertDialogBuilder = AlertDialog.Builder(this@Lights)
-                    alertDialogBuilder.setPositiveButton("OK") { dialog, which ->
+                    alertDialogBuilder.setPositiveButton("Apply") { dialog, which ->
                         previousColor = '#' + colorPickerView.color.toUInt().toString(16)
                         this.lightColor = previousColor
                         changeColor(previousColor)
                         lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
-                        lightSend()
+                        lightSend(2)
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
-                        Toast.makeText(this@Lights, "Cancel", Toast.LENGTH_SHORT).show()
+                        this.lightColor = previousColor
+                        lightSend(0)
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+                    }
+                    alertDialogBuilder.setOnDismissListener {
+                        this.lightColor = previousColor
+                        lightSend(0)
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+                    }
+                    alertDialogBuilder.setOnCancelListener {
+                        this.lightColor = previousColor
+                        lightSend(0)
+                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     val alertDialog = alertDialogBuilder.create()
                     alertDialog.setView(colorPickerView)
@@ -214,7 +231,7 @@ class Lights : AppCompatActivity() {
             }
         }
 
-        private fun lightSend() {
+        private fun lightSend(qos: Int) {
             val payload = JSONObject()
             payload.put("thingCode", thingCode)
             // payload.put("alias", this.lightName)
@@ -225,12 +242,15 @@ class Lights : AppCompatActivity() {
             essential.put("publisherudi", udi)
             val targetSubscriber = JSONArray()
             targetSubscriber.put(this.id)
+            val mqttPacket = JSONObject()
+            mqttPacket.put("qos", qos)
             essential.put("targetSubscriber", targetSubscriber)
             essential.put("payloadType", "command")
+            essential.put("mqttPacket", mqttPacket)
             essential.put("payload", payload)
             val packedJson = JSONObject()
             packedJson.put("essential", essential)
-            connectivity.mqttPublish(packedJson.toString().toByteArray())
+            connectivity.mqttPublish(packedJson.toString().toByteArray(), qos)
         }
     }
 

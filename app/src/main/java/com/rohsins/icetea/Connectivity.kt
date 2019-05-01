@@ -52,6 +52,10 @@ class Connectivity : BroadcastReceiver() {
         Thread(PublishRunnable(mqttMessage)).start()
     }
 
+    fun mqttPublish(mqttMessage: ByteArray, qos: Int) {
+        Thread(PublishRunnable(mqttMessage, qos)).start()
+    }
+
     private fun mqttSubscribe(topic: String) {
         try {
             if (mqttConfigured && mqttClient.isConnected) {
@@ -333,6 +337,12 @@ class Connectivity : BroadcastReceiver() {
         constructor(mqttMessage: ByteArray)  {
             mqttPayload.payload = mqttMessage
             mqttPayload.qos = 2
+            mqttPayload.isRetained = false
+        }
+
+        constructor(mqttMessage: ByteArray, qos: Int)  {
+            mqttPayload.payload = mqttMessage
+            mqttPayload.qos = qos
             mqttPayload.isRetained = false
         }
 
