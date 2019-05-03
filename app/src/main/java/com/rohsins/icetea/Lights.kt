@@ -154,7 +154,7 @@ class Lights : AppCompatActivity() {
             seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     this@LightElement.intensity = seekBar!!.progress
-                    lightSend(0)
+                    lightSend(1)
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -195,7 +195,7 @@ class Lights : AppCompatActivity() {
                         val previewColor = '#' + it.color.toUInt().toString(16)
                         if (this.lightColor != previewColor) {
                             this.lightColor = previewColor
-                            lightSend(0)
+                            lightSend(1)
                         }
                     }
 
@@ -210,17 +210,17 @@ class Lights : AppCompatActivity() {
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
                         this.lightColor = previousColor
-                        lightSend(0)
+                        lightSend(1)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnDismissListener {
                         this.lightColor = previousColor
-                        lightSend(0)
+                        lightSend(1)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnCancelListener {
                         this.lightColor = previousColor
-                        lightSend(0)
+                        lightSend(1)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     val alertDialog = alertDialogBuilder.create()
