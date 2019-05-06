@@ -148,7 +148,7 @@ class AlarmPingSender implements MqttPingSender {
 
 //			Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
 
-			Log.d(TAG, "Calculating Approximating Analyzing");
+//			Log.d(TAG, "Calculating Approximating Analyzing");
 
 			PowerManager pm = (PowerManager) service
 					.getSystemService(Service.POWER_SERVICE);
@@ -180,22 +180,22 @@ class AlarmPingSender implements MqttPingSender {
 
 			if (System.currentTimeMillis() > pingThreshold) {
 				try {
-					Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
+//					Log.d(TAG, "Sending Ping at:" + System.currentTimeMillis());
 					MqttMessage mqttMsg = new MqttMessage();
-					mqttMsg.setQos(0);
+					mqttMsg.setQos(1);
 					mqttMsg.clearPayload();
 					mqttMsg.setPayload("".getBytes());
 					comms.getClient().publish(" ", mqttMsg, this, new IMqttActionListener() {
 						@Override
 						public void onSuccess(IMqttToken asyncActionToken) {
 							pingThreshold = System.currentTimeMillis() + fKeepalive;
-							Log.d(TAG, "Customized PING Packet Sent");
-							Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
+//							Log.d(TAG, "Customized PING Packet Sent");
+//							Log.d(TAG, "Alarm schedule using setExactAndAllowWhileIdle, next: " + fKeepalive);
 						}
 
 						@Override
 						public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-							Log.d(TAG, "Customized PING Packet Send Failed");
+//							Log.d(TAG, "Customized PING Packet Send Failed");
 						}
 					});
 //					pingThreshold = System.currentTimeMillis() + fKeepalive;
