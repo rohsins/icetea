@@ -8,6 +8,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.Handler
 import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
@@ -17,7 +18,7 @@ import java.net.Socket
 import org.greenrobot.eventbus.EventBus
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
-private const val mqttClientId = "rohsinsOKotlinW1" // Arbitrary
+private const val mqttClientId = Settings.Secure.ANDROID_ID // Arbitrary
 private const val mqttUserName = "rts" // fixed
 private const val mqttPassword = "rts" // fixed
 const val udi = "710829d688052940" // Arbitrary
