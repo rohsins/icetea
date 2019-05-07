@@ -358,7 +358,7 @@ class Lights : AppCompatActivity() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onMessage(event: MessageEvent) {
-        Log.d("VTAG", "event message from main: ${event.mqttMessage}")
         renderHandler.postDelayed(renderRunnable, 100)
+        Log.d("VTAG", "event message from main: ${event.mqttMessage}")
     }
 }

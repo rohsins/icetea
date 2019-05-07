@@ -146,7 +146,7 @@ class LightRoutine: Runnable {
                             if (typeCheckPub) payload.getString("pubAlias") else payload.getString("subAlias"),
                             false,
                             10,
-                            "#ffF0F0A0"
+                            "#ff4aa352"
                         )
                     )
                 } else if (payload.getString("activity")!!.contentEquals("unlink")) {
