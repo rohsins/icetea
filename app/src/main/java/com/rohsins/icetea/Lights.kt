@@ -336,6 +336,7 @@ class Lights : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        renderHandler.postDelayed(renderRunnable, 100)
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this)
         }
