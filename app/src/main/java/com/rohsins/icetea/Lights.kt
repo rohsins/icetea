@@ -120,20 +120,22 @@ class Lights : AppCompatActivity() {
         }
 
         private fun changeColor(color: String) {
-            linearLayoutElement.background.setTint(Color.parseColor(color))
-            val gradientDrawable = GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(
-                    Color.parseColor(color),
-                    ColorUtils.blendARGB(
+            if (color.length > 6) {
+                linearLayoutElement.background.setTint(Color.parseColor(color))
+                val gradientDrawable = GradientDrawable(
+                    GradientDrawable.Orientation.LEFT_RIGHT,
+                    intArrayOf(
                         Color.parseColor(color),
-                        Color.parseColor("#FFFFFF"),
-                        0.4.toFloat()
+                        ColorUtils.blendARGB(
+                            Color.parseColor(color),
+                            Color.parseColor("#FFFFFF"),
+                            0.4.toFloat()
+                        )
                     )
                 )
-            )
-            gradientDrawable.cornerRadius = dp(6).toFloat()
-            seekBar.background = gradientDrawable
+                gradientDrawable.cornerRadius = dp(6).toFloat()
+                seekBar.background = gradientDrawable
+            }
         }
 
         private fun disableLight() {
@@ -163,7 +165,7 @@ class Lights : AppCompatActivity() {
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
 //                    this@LightElement.intensity = seekBar!!.progress
 //                    Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
-                    lightDao.updateLight(Light(this@LightElement.id, this@LightElement.lightName, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.lightColor))
+//                    lightDao.updateLight(Light(this@LightElement.id, this@LightElement.lightName, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.lightColor))
                     lightSend(2)
                 }
             })
@@ -177,7 +179,7 @@ class Lights : AppCompatActivity() {
                 } else {
                     enableLight()
                 }
-                lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
+//                lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
                 lightSend(2)
             }
         }
@@ -204,7 +206,7 @@ class Lights : AppCompatActivity() {
                         previousColor = '#' + colorPickerView.color.toUInt().toString(16)
                         this.lightColor = previousColor
                         changeColor(previousColor)
-                        lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
+//                        lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
                         lightSend(2)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
