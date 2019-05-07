@@ -89,10 +89,10 @@ class BackgroundService: Service() {
 //        Log.d("VTAG", "event message: ${event.mqttMessage}")
         try {
             val jsonFile = JSONObject(event.mqttMessage.toString())
-            val subscriberudi= jsonFile.getString("subscriberudi")
-            val payloadType= jsonFile.getString("payloadType")
-            val payload= jsonFile.getJSONObject("payload")
-            if (payloadType.contentEquals("commandReply") && payload.getInt("thingCode") == 13001) {
+            val subscriberudi = jsonFile.getString("subscriberudi")
+            val payloadType = jsonFile.getString("payloadType")
+            val payload = jsonFile.getJSONObject("payload")
+            if (payloadType!!.contentEquals("commandReply") && payload.getInt("thingCode") == 13001) {
                 val lightDao = LightDatabase.getInstance(this).lightDao()
                 lightDao.updateLight(
                     Light(
@@ -104,10 +104,10 @@ class BackgroundService: Service() {
                     )
                 )
             }
-            val typeCheckPub = payload.getString("pubType").contentEquals("lightSwitch")
-            val typeCheckSub = payload.getString("subType").contentEquals("lightSwitch")
-            if (payloadType.contentEquals("appSync") && (typeCheckPub || typeCheckSub)) {
-                if (payload.getString("activity").contentEquals("link")) {
+            val typeCheckPub = payload.getString("pubType")!!.contentEquals("lightSwitch")
+            val typeCheckSub = payload.getString("subType")!!.contentEquals("lightSwitch")
+            if (payloadType!!.contentEquals("appSync") && (typeCheckPub || typeCheckSub)) {
+                if (payload.getString("activity")!!.contentEquals("link")) {
                     val lightDao = LightDatabase.getInstance(this).lightDao()
                     lightDao.insertLight(
                         Light(
@@ -115,10 +115,10 @@ class BackgroundService: Service() {
                             if (typeCheckPub) payload.getString("pubAlias") else payload.getString("subAlias"),
                             false,
                             0,
-                            "#ff999999"
+                            "#ffA0A0A0"
                         )
                     )
-                } else if (payload.getString("activity").contentEquals("unlink")) {
+                } else if (payload.getString("activity")!!.contentEquals("unlink")) {
                     val lightDao = LightDatabase.getInstance(this).lightDao()
                     if (typeCheckPub) lightDao.deleteLight(payload.getString("pubUDI")) else lightDao.deleteLight(payload.getString("subUDI"))
                 }
