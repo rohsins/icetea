@@ -245,7 +245,11 @@ class Lights : AppCompatActivity() {
             val mqttPacket = JSONObject()
             mqttPacket.put("qos", qos)
             essential.put("targetSubscriber", targetSubscriber)
-            essential.put("payloadType", "command")
+            if (qos == 2) {
+                essential.put("payloadType", "command")
+            } else {
+                essential.put("payloadType", "preview")
+            }
             essential.put("mqttPacket", mqttPacket)
             essential.put("payload", payload)
             val packedJson = JSONObject()

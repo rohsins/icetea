@@ -1,5 +1,6 @@
 package com.rohsins.icetea
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -18,7 +19,6 @@ import java.net.Socket
 import org.greenrobot.eventbus.EventBus
 
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
-private const val mqttClientId = Settings.Secure.ANDROID_ID // Arbitrary
 private const val mqttUserName = "rts" // fixed
 private const val mqttPassword = "rts" // fixed
 const val udi = "710829d688052940" // Arbitrary
@@ -158,6 +158,7 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
+    @SuppressLint("HardwareIds")
     fun configureAndConnectMqtt(mqttContext: Context? = mqttApplicationContext) {
         if (mqttContext != null) {
             mqttApplicationContext = mqttContext
@@ -166,7 +167,7 @@ class Connectivity : BroadcastReceiver() {
             mqttConfigured = true
 
             val brokerAddress = mqttURI
-            val clientId = mqttClientId
+            val clientId = Settings.Secure.getString(mqttContext!!.contentResolver, Settings.Secure.ANDROID_ID)
             val persistence: MqttClientPersistence? = null
 
             connectOption.userName = mqttUserName
