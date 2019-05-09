@@ -1,6 +1,7 @@
 package com.rohsins.icetea
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -20,6 +21,7 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.Exception
 
 class Lights : AppCompatActivity() {
 
@@ -28,6 +30,22 @@ class Lights : AppCompatActivity() {
     private fun dp(dp: Int): Int {
         val density = resources.displayMetrics.density
         return Math.round(dp.toFloat() * density)
+    }
+
+    private lateinit var linearLayout: LinearLayout
+    private lateinit var scrollView: ScrollView
+
+    private val renderHandler = Handler()
+
+    private val renderRunnable = Runnable {
+        linearLayout.removeAllViews()
+        scrollView.removeAllViews()
+
+        lightDao.getAllLight().forEach {
+            linearLayout.addView(LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color).getLayout())
+        }
+
+        scrollView.addView(linearLayout)
     }
 
     inner class LightElement {
@@ -258,22 +276,6 @@ class Lights : AppCompatActivity() {
             packedJson.put("essential", essential)
             connectivity.mqttPublish(packedJson.toString().toByteArray(), qos)
         }
-    }
-
-    private lateinit var linearLayout: LinearLayout
-    private lateinit var scrollView: ScrollView
-
-    private val renderHandler = Handler()
-
-    private val renderRunnable = Runnable {
-        linearLayout.removeAllViews()
-        scrollView.removeAllViews()
-
-        lightDao.getAllLight().forEach {
-            linearLayout.addView(LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color).getLayout())
-        }
-
-        scrollView.addView(linearLayout)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
