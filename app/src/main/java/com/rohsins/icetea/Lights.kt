@@ -281,15 +281,6 @@ class Lights : AppCompatActivity() {
 
         lightDao = LightDatabase.getInstance(this@Lights).lightDao()
 
-//        var light = Light("1", "kitchen", false, 93, "#329582")
-//        lightDao.insertLight(light)
-//        light.id = "2"
-//        light.alias = "bedroom"
-//        light.isChecked = false
-//        light.intensity = 23
-//        light.color = "#329213"
-//        lightDao.insertLight(light)
-
         linearLayout = LinearLayout(this)
         scrollView = ScrollView(this)
 
@@ -303,15 +294,6 @@ class Lights : AppCompatActivity() {
 
         scrollView.addView(linearLayout)
         setContentView(scrollView)
-
-//        val firstElement = LightElement("Living Room", "#329582")
-//        val secondElement = LightElement("Bed Room", "#427431")
-//        val thirdElement = LightElement("Bath Room", "#824491")
-
-
-//        linearLayout.addView(firstElement.getLayout())
-//        linearLayout.addView(secondElement.getLayout())
-//        linearLayout.addView(thirdElement.getLayout())
 
         renderHandler.post(renderRunnable)
 
@@ -358,7 +340,6 @@ class Lights : AppCompatActivity() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onMessage(event: MessageEvent) {
-        renderHandler.postDelayed(renderRunnable, 100)
-        Log.d("VTAG", "event message from main: ${event.mqttMessage}")
+        renderHandler.post(renderRunnable)
     }
 }
