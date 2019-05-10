@@ -363,7 +363,9 @@ class LightRoutine: Runnable {
             val subscriberudi = jsonFile.getString("subscriberudi")
             val payloadType = jsonFile.getString("payloadType")
             val payload = jsonFile.getJSONObject("payload")
-            if (payloadType!!.contentEquals("commandReply") && payload.getInt("thingCode") == 13001) {
+            if (payloadType!!.contentEquals("commandReply")
+                && payload.getInt("thingCode") == 13001
+                && !payload.getString("color").isEmpty()) {
                 val lightDao = LightDatabase.getInstance(context).lightDao()
                 lightDao.updateLight(
                     Light(
@@ -374,7 +376,9 @@ class LightRoutine: Runnable {
                         payload.getString("color")
                     )
                 )
-            } else if (payloadType!!.contentEquals("response") && payload.getInt("thingCode") == 13001) {
+            } else if (payloadType!!.contentEquals("response")
+                && payload.getInt("thingCode") == 13001
+                && !payload.getString("color").isEmpty()) {
                 val lightDao = LightDatabase.getInstance(context).lightDao()
                 lightDao.updateLight(
                     Light(
