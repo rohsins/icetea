@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v4.graphics.ColorUtils
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.view.Gravity
 import android.widget.*
 import com.rarepebble.colorpicker.ColorPickerView
@@ -21,7 +20,8 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.json.JSONArray
 import org.json.JSONObject
-import java.lang.Exception
+
+val lightsViewUpdateLock = Object()
 
 class Lights : AppCompatActivity() {
 
@@ -342,6 +342,63 @@ class Lights : AppCompatActivity() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onMessage(event: MessageEvent) {
-        renderHandler.post(renderRunnable)
+        synchronized(lightsViewUpdateLock) {
+            lightsViewUpdateLock.wait()
+            renderHandler.post(renderRunnable)
+        }
+    }
+}
+
+class LightRoutine: Runnable {
+    var event: MessageEvent
+    var context: Context
+
+    constructor(eventArg: MessageEvent, contextArg: Context) {
+        event = eventArg
+        context = contextArg
+    }
+    override fun run() {
+        try {
+            val jsonFile = JSONObject(event.mqttMessage.toString())
+            val subscriberudi = jsonFile.getString("subscriberudi")
+            val payloadType = jsonFile.getString("payloadType")
+            val payload = jsonFile.getJSONObject("payload")
+            if (payloadType!!.contentEquals("commandReply") && payload.getInt("thingCode") == 13001) {
+                val lightDao = LightDatabase.getInstance(context).lightDao()
+                lightDao.updateLight(
+                    Light(
+                        subscriberudi,
+                        payload.getString("alias"),
+                        payload.getBoolean("isChecked"),
+                        payload.getInt("intensity"),
+                        payload.getString("color")
+                    )
+                )
+            }
+            val typeCheckPub = payload.getString("pubType")!!.contentEquals("lightSwitch")
+            val typeCheckSub = payload.getString("subType")!!.contentEquals("lightSwitch")
+            if (payloadType.contentEquals("appSync") && (typeCheckPub || typeCheckSub)) {
+                if (payload.getString("activity")!!.contentEquals("link")) {
+                    val lightDao = LightDatabase.getInstance(context).lightDao()
+                    lightDao.insertLight(
+                        Light(
+                            if (typeCheckPub) payload.getString("pubUDI") else payload.getString("subUDI"),
+                            if (typeCheckPub) payload.getString("pubAlias") else payload.getString("subAlias"),
+                            false,
+                            10,
+                            "#ff4aa352"
+                        )
+                    )
+                } else if (payload.getString("activity")!!.contentEquals("unlink")) {
+                    val lightDao = LightDatabase.getInstance(context).lightDao()
+                    if (typeCheckPub) lightDao.deleteLight(payload.getString("pubUDI")) else lightDao.deleteLight(payload.getString("subUDI"))
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        synchronized(lightsViewUpdateLock) {
+            lightsViewUpdateLock.notify()
+        }
     }
 }
