@@ -374,6 +374,17 @@ class LightRoutine: Runnable {
                         payload.getString("color")
                     )
                 )
+            } else if (payloadType!!.contentEquals("response") && payload.getInt("thingCode") == 13001) {
+                val lightDao = LightDatabase.getInstance(context).lightDao()
+                lightDao.updateLight(
+                    Light(
+                        subscriberudi,
+                        payload.getString("alias"),
+                        payload.getBoolean("isChecked"),
+                        payload.getInt("intensity"),
+                        payload.getString("color")
+                    )
+                )
             }
             val typeCheckPub = payload.getString("pubType")!!.contentEquals("lightSwitch")
             val typeCheckSub = payload.getString("subType")!!.contentEquals("lightSwitch")
@@ -389,6 +400,20 @@ class LightRoutine: Runnable {
                             "#ff4aa352"
                         )
                     )
+
+                    val packedJson = JSONObject()
+                    val essential = JSONObject()
+                    val targetSubscriber = JSONArray()
+                    val requestPayload = JSONObject()
+                    requestPayload.put("thingCode", thingCode)
+                    requestPayload.put("state", true)
+                    targetSubscriber.put(payload.getString("subUDI"))
+                    essential.put("publisherudi", udi)
+                    essential.put("targetSubscriber", targetSubscriber)
+                    essential.put("payloadType", "request")
+                    essential.put("payload", requestPayload)
+                    packedJson.put("essential", essential)
+                    connectivity.mqttPublish(packedJson.toString().toByteArray(), 2)
                 } else if (payload.getString("activity")!!.contentEquals("unlink")) {
                     val lightDao = LightDatabase.getInstance(context).lightDao()
                     if (typeCheckPub) lightDao.deleteLight(payload.getString("pubUDI")) else lightDao.deleteLight(payload.getString("subUDI"))
