@@ -225,6 +225,14 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
+    fun unconfigureAndDisconnectMqttForcibly() {
+        if (mqttConfigured) {
+            mqttConfigured = false
+            mqttApplicationContext!!.unregisterReceiver(this)
+            mqttClient.unregisterResources()
+        }
+    }
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (useMqtt) {
             val conn = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
