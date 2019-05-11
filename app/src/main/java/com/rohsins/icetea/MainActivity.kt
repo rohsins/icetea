@@ -4,9 +4,10 @@ import android.content.Intent
 import android.os.*
 import android.support.v7.app.AppCompatActivity
 import android.widget.AdapterView
-import android.widget.GridView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
+
+val connectivity: Connectivity = Connectivity()
 
 class MainActivity : AppCompatActivity() {
     companion object {

@@ -1,6 +1,5 @@
 package com.rohsins.icetea
 
-import android.annotation.SuppressLint
 import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -15,9 +14,6 @@ import android.util.Log
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-
-@SuppressLint("StaticFieldLeak")
-val connectivity: Connectivity = Connectivity()
 
 class BackgroundService: Service() {
     private var serviceChannelId: String? = null
