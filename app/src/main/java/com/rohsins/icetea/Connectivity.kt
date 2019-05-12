@@ -230,6 +230,7 @@ class Connectivity : BroadcastReceiver() {
             mqttConfigured = false
             mqttApplicationContext!!.unregisterReceiver(this)
             mqttClient.unregisterResources()
+            mqttClient.close()
         }
     }
 
