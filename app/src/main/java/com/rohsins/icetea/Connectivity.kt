@@ -158,14 +158,43 @@ class Connectivity : BroadcastReceiver() {
         }
     }
 
+    private val mqttCallbackExtended = object: MqttCallbackExtended {
+        override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+            Log.d("VTAG", "Connection Complete")
+            if (firstTimeMqttConnect) {
+                mqttSubscribe(subscribeTopic)
+                firstTimeMqttConnect = false
+            }
+            mqttClient.publish("android/pub/ConnectInfo", "Device: $udi Connected".toByteArray(), 2,false)
+        }
+
+        override fun messageArrived(topic: String?, message: MqttMessage?) {
+//                    Log.d("VTAG", message.toString())
+//                    mqttPublish("Message Acknowledged from $udi".toByteArray())
+            MessageEvent.mqttMessage = message
+            MessageEvent.mqttTopic = topic
+            EventBus.getDefault().post(MessageEvent)
+        }
+
+        override fun connectionLost(cause: Throwable?) {
+            Log.d("VTAG", "Connection lost. WTF!!!")
+            if (!mqttClient.isConnected && !mqttConnectLock) {
+                Log.d("VTAG", "Entered in post delay handle execution: $mqttConnectLock")
+                handler.postDelayed({mqttConnect()}, 2000)
+            }
+        }
+
+        override fun deliveryComplete(token: IMqttDeliveryToken?) {
+
+        }
+    }
+
     @SuppressLint("HardwareIds")
     fun configureAndConnectMqtt(mqttContext: Context? = mqttApplicationContext) {
         if (mqttContext != null) {
             mqttApplicationContext = mqttContext
         }
         if (!mqttConfigured) {
-            mqttConfigured = true
-
             val brokerAddress = mqttURI
             val clientId = Settings.Secure.getString(mqttContext!!.contentResolver, Settings.Secure.ANDROID_ID)
             val persistence: MqttClientPersistence? = null
@@ -179,38 +208,9 @@ class Connectivity : BroadcastReceiver() {
             connectOption.maxInflight = 50
 
             mqttClient = MqttAndroidClient(mqttContext, brokerAddress, clientId, persistence)
-            mqttClient.setCallback(object: MqttCallbackExtended {
-
-                override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                    Log.d("VTAG", "Connection Complete")
-                    if (firstTimeMqttConnect) {
-                        mqttSubscribe(subscribeTopic)
-                        firstTimeMqttConnect = false
-                    }
-                    mqttClient.publish("android/pub/ConnectInfo", "Device: $udi Connected".toByteArray(), 2,false)
-                }
-
-                override fun messageArrived(topic: String?, message: MqttMessage?) {
-//                    Log.d("VTAG", message.toString())
-//                    mqttPublish("Message Acknowledged from $udi".toByteArray())
-                    MessageEvent.mqttMessage = message
-                    MessageEvent.mqttTopic = topic
-                    EventBus.getDefault().post(MessageEvent)
-                }
-
-                override fun connectionLost(cause: Throwable?) {
-                    Log.d("VTAG", "Connection lost. WTF!!!")
-                    if (!mqttClient.isConnected && !mqttConnectLock) {
-                        Log.d("VTAG", "Entered in post delay handle execution: $mqttConnectLock")
-                        handler.postDelayed({mqttConnect()}, 2000)
-                    }
-                }
-
-                override fun deliveryComplete(token: IMqttDeliveryToken?) {
-
-                }
-            })
+            mqttClient.setCallback(mqttCallbackExtended)
             mqttApplicationContext!!.registerReceiver(this, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+            mqttConfigured = true
             mqttConnect()
         } else {
             mqttConnect()
@@ -220,6 +220,7 @@ class Connectivity : BroadcastReceiver() {
     fun unconfigureAndDisconnectMqtt() {
         if (mqttConfigured) {
             mqttConfigured = false
+            firstTimeMqttConnect = true
             mqttApplicationContext!!.unregisterReceiver(this)
             mqttDestroy()
         }
@@ -228,6 +229,7 @@ class Connectivity : BroadcastReceiver() {
     fun unconfigureAndDisconnectMqttForcibly() {
         if (mqttConfigured) {
             mqttConfigured = false
+            firstTimeMqttConnect = true
             mqttApplicationContext!!.unregisterReceiver(this)
             mqttClient.unregisterResources()
             mqttClient.close()
