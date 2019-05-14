@@ -211,7 +211,7 @@ class Connectivity : BroadcastReceiver() {
                 }
             })
             mqttApplicationContext!!.registerReceiver(this, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
-//            mqttConnect()
+            mqttConnect()
         } else {
             mqttConnect()
         }
