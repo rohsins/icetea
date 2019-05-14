@@ -47,7 +47,7 @@ class BackgroundService: Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int) : Int {
         Log.d("VTAG", "starting service")
         val filter = IntentFilter("KSignalReceiverFlag")
-        registerReceiver(kSignalReceiver, filter)
+//        registerReceiver(kSignalReceiver, filter)
         startForeground(291, serviceNotificationBuilder!!.build())
         connectivity.configureAndConnectMqtt(applicationContext)
         EventBus.getDefault().register(this)
@@ -61,8 +61,8 @@ class BackgroundService: Service() {
 
     override fun onDestroy() {
         Log.d("VTAG", "killing service")
-        Handler().postDelayed({ connectivity.unconfigureAndDisconnectMqtt() }, 2000)
-        unregisterReceiver(kSignalReceiver)
+        connectivity.unconfigureAndDisconnectMqttForcibly()
+//        unregisterReceiver(kSignalReceiver)
         EventBus.getDefault().unregister(this)
     }
 
