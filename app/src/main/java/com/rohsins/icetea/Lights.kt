@@ -299,7 +299,9 @@ class Lights : AppCompatActivity() {
 
         renderHandler.post(renderRunnable)
 
-        connectivity.configureAndConnectMqtt(applicationContext)
+        if (!MainActivity.serviceRunning) {
+            connectivity.configureAndConnectMqtt(applicationContext)
+        }
 
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this)
@@ -308,7 +310,9 @@ class Lights : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        connectivity.unconfigureAndDisconnectMqttForcibly()
+        if (!MainActivity.serviceRunning) {
+            connectivity.unconfigureAndDisconnectMqttForcibly()
+        }
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this)
         }
