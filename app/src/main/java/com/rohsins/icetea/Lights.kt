@@ -318,34 +318,34 @@ class Lights : AppCompatActivity() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-        }
-    }
+//    override fun onPause() {
+//        super.onPause()
+//        if (EventBus.getDefault().isRegistered(this)) {
+//            EventBus.getDefault().unregister(this)
+//        }
+//    }
 
     override fun onResume() {
         super.onResume()
-        renderHandler.postDelayed(renderRunnable, 100)
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-        }
+        renderHandler.post(renderRunnable)
+//        if (!EventBus.getDefault().isRegistered(this)) {
+//            EventBus.getDefault().register(this)
+//        }
     }
 
-    override fun onStop() {
-        super.onStop()
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-        }
-    }
+//    override fun onStop() {
+//        super.onStop()
+//        if (EventBus.getDefault().isRegistered(this)) {
+//            EventBus.getDefault().unregister(this)
+//        }
+//    }
 
-    override fun onStart() {
-        super.onStart()
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-        }
-    }
+//    override fun onStart() {
+//        super.onStart()
+//        if (!EventBus.getDefault().isRegistered(this)) {
+//            EventBus.getDefault().register(this)
+//        }
+//    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onMessage(event: MessageEvent) {
