@@ -400,7 +400,10 @@ class LightRoutine: Runnable {
             }
             val typeCheckPub = payload.getString("pubType")!!.contentEquals("lightSwitch")
             val typeCheckSub = payload.getString("subType")!!.contentEquals("lightSwitch")
-            if (payloadType.contentEquals("appSync") && (typeCheckPub || typeCheckSub)) {
+            if (payloadType.contentEquals("appSync")
+                && (typeCheckPub || typeCheckSub)
+                && (payload.getString("pubUDI")!!.contentEquals(udi)
+                        || payload.getString("subUDI")!!.contentEquals(udi))) {
                 if (payload.getString("activity")!!.contentEquals("link")) {
                     val lightDao = LightDatabase.getInstance(context).lightDao()
                     lightDao.insertLight(

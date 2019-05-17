@@ -21,7 +21,7 @@ import org.greenrobot.eventbus.EventBus
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
 private const val mqttUserName = "rts" // fixed
 private const val mqttPassword = "rts" // fixed
-const val udi = "710829d688052940" // Arbitrary
+const val udi = "918429f680052385" // Arbitrary
 const val thingCode = 12001 //androidMobile
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$udi" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$udi" // fixed
@@ -171,9 +171,11 @@ class Connectivity : BroadcastReceiver() {
         override fun messageArrived(topic: String?, message: MqttMessage?) {
 //                    Log.d("VTAG", message.toString())
 //                    mqttPublish("Message Acknowledged from $udi".toByteArray())
-            MessageEvent.mqttMessage = message
-            MessageEvent.mqttTopic = topic
-            EventBus.getDefault().post(MessageEvent)
+            if (topic!!.contentEquals(subscribeTopic)) {
+                MessageEvent.mqttMessage = message
+                MessageEvent.mqttTopic = topic
+                EventBus.getDefault().post(MessageEvent)
+            }
         }
 
         override fun connectionLost(cause: Throwable?) {
