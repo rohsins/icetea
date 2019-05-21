@@ -7,14 +7,14 @@ import android.arch.persistence.room.ColumnInfo
 @Entity(tableName = "Light")
 data class Light (
     @PrimaryKey(autoGenerate = false)
-    @ColumnInfo(name = "id")
-    var id: String,
-    @ColumnInfo(name = "lightAlias")
+    @ColumnInfo(name = "udi")
+    var udi: String,
+    @ColumnInfo(name = "alias")
     var alias: String,
-    @ColumnInfo(name = "switchValue")
+    @ColumnInfo(name = "isChecked")
     var isChecked: Boolean,
-    @ColumnInfo(name = "lightIntensity")
+    @ColumnInfo(name = "intensity")
     var intensity: Int,
-    @ColumnInfo(name = "lightColor")
+    @ColumnInfo(name = "color")
     var color: String
 )

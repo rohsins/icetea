@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v4.graphics.ColorUtils
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.Gravity
 import android.widget.*
 import com.rarepebble.colorpicker.ColorPickerView
@@ -40,18 +41,18 @@ class Lights : AppCompatActivity() {
         scrollView.removeAllViews()
 
         lightDao.getAllLight().forEach {
-            linearLayout.addView(LightElement(it.id, it.alias, it.isChecked, it.intensity, it.color).getLayout())
+            linearLayout.addView(LightElement(it.udi, it.alias, it.isChecked, it.intensity, it.color).getLayout())
         }
 
         scrollView.addView(linearLayout)
     }
 
     inner class LightElement {
-        private var id: String
-        private var lightName: String
+        private var udi: String
+        private var alias: String
         private var isChecked: Boolean
         private var intensity: Int
-        private var lightColor: String
+        private var color: String
 
         private val linearLayoutElement = LinearLayout(this@Lights)
         private val layoutParamsElement = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(100))
@@ -76,14 +77,14 @@ class Lights : AppCompatActivity() {
         )
         private var previousColor: String
 
-        constructor(id: String, lightName: String, isChecked: Boolean, intensity: Int, lightColor: String = "#59C1D2") {
-            this.id = id
-            this.lightName = lightName
+        constructor(udi: String, alias: String, isChecked: Boolean, intensity: Int, color: String = "#59C1D2") {
+            this.udi = udi
+            this.alias = alias
             this.isChecked = isChecked
             this.intensity = intensity
-            this.lightColor = lightColor
+            this.color = color
 
-            previousColor = lightColor
+            previousColor = color
 
             layoutParamsElement.setMargins(dp(10), dp(10), dp(10), dp(10))
             linearLayoutElement.layoutParams = layoutParamsElement
@@ -100,7 +101,7 @@ class Lights : AppCompatActivity() {
             textViewLayoutParams.marginStart = dp(10)
             textView.gravity = Gravity.CENTER_VERTICAL
             textView.textSize = 20f
-            textView.text = lightName
+            textView.text = alias
             textView.layoutParams = textViewLayoutParams
             textView.setTextColor(Color.parseColor("#000000"))
 
@@ -117,7 +118,7 @@ class Lights : AppCompatActivity() {
             seekBar.splitTrack = false
             seekBar.thumb = getDrawable(R.drawable.light_thumb)
             seekBar.progressDrawable = getDrawable(R.drawable.none)
-            changeColor(lightColor)
+            changeColor(color)
 
             linearLayoutElement.addView(linearLayoutSection1)
             linearLayoutElement.addView(seekBar)
@@ -181,7 +182,7 @@ class Lights : AppCompatActivity() {
                 override fun onStopTrackingTouch(seekBar: SeekBar?) {
 //                    this@LightElement.intensity = seekBar!!.progress
 //                    Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
-//                    lightDao.updateLight(Light(this@LightElement.id, this@LightElement.lightName, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.lightColor))
+//                    lightDao.updateLight(Light(this@LightElement.udi, this@LightElement.alias, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.color))
                     lightSend(2)
                 }
             })
@@ -195,7 +196,7 @@ class Lights : AppCompatActivity() {
                 } else {
                     enableLight()
                 }
-//                lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
+//                lightDao.updateLight(Light(this.udi, this.alias, this.isChecked, this.intensity, this.color))
                 lightSend(2)
             }
         }
@@ -211,8 +212,8 @@ class Lights : AppCompatActivity() {
                     colorPickerView.showPreview(true)
                     colorPickerView.addColorObserver {
                         val previewColor = '#' + it.color.toUInt().toString(16)
-                        if (this.lightColor != previewColor) {
-                            this.lightColor = previewColor
+                        if (this.color != previewColor) {
+                            this.color = previewColor
                             lightSend(1)
                         }
                     }
@@ -220,24 +221,24 @@ class Lights : AppCompatActivity() {
                     val alertDialogBuilder = AlertDialog.Builder(this@Lights)
                     alertDialogBuilder.setPositiveButton("Apply") { dialog, which ->
                         previousColor = '#' + colorPickerView.color.toUInt().toString(16)
-                        this.lightColor = previousColor
+                        this.color = previousColor
                         changeColor(previousColor)
-//                        lightDao.updateLight(Light(this.id, this.lightName, this.isChecked, this.intensity, this.lightColor))
+//                        lightDao.updateLight(Light(this.udi, this.alias, this.isChecked, this.intensity, this.color))
                         lightSend(2)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
-                        this.lightColor = previousColor
+                        this.color = previousColor
                         lightSend(1)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnDismissListener {
-                        this.lightColor = previousColor
+                        this.color = previousColor
                         lightSend(1)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnCancelListener {
-                        this.lightColor = previousColor
+                        this.color = previousColor
                         lightSend(1)
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
@@ -251,15 +252,15 @@ class Lights : AppCompatActivity() {
 
         private fun lightSend(qos: Int) {
             val payload = JSONObject()
-            payload.put("thingCode", thingCode)
-            // payload.put("alias", this.lightName)
+            payload.put("thingCode", THINGCODE)
+            // payload.put("alias", this.alias)
             payload.put("isChecked", this.isChecked)
             payload.put("intensity", this.intensity)
-            payload.put("color", this.lightColor)
+            payload.put("color", this.color)
             val essential = JSONObject()
-            essential.put("publisherudi", udi)
+            essential.put("publisherudi", UDI)
             val targetSubscriber = JSONArray()
-            targetSubscriber.put(this.id)
+            targetSubscriber.put(this.udi)
             val mqttPacket = JSONObject()
             mqttPacket.put("qos", qos)
             essential.put("targetSubscriber", targetSubscriber)
@@ -370,38 +371,34 @@ class LightRoutine: Runnable {
             val payloadType = jsonFile.getString("payloadType")
             val payload = jsonFile.getJSONObject("payload")
             if (payloadType!!.contentEquals("commandReply")
-                && payload.getInt("thingCode") == 13001
-                && !payload.getString("color").isEmpty()) {
+                && payload.getInt("thingCode") == 13001) {
                 val lightDao = LightDatabase.getInstance(context).lightDao()
-                lightDao.updateLight(
-                    Light(
-                        subscriberudi,
-                        payload.getString("alias"),
-                        payload.getBoolean("isChecked"),
-                        payload.getInt("intensity"),
-                        payload.getString("color")
-                    )
-                )
+                try {
+                    lightDao.updateLightIsChecked(subscriberudi, payload.getBoolean("isChecked"))
+                } catch (e: org.json.JSONException) {}
+                try {
+                    lightDao.updateLightIntensity(subscriberudi, payload.getInt("intensity"))
+                } catch (e: org.json.JSONException) {}
+                try {
+                    lightDao.updateLightColor(subscriberudi, payload.getString("color"))
+                } catch (e: org.json.JSONException) {}
             } else if (payloadType!!.contentEquals("response")
                 && payload.getInt("thingCode") == 13001
-                && !payload.getString("color").isEmpty()) {
+                && payload.optString("color").isNotEmpty()) {
                 val lightDao = LightDatabase.getInstance(context).lightDao()
-                lightDao.updateLight(
-                    Light(
-                        subscriberudi,
-                        payload.getString("alias"),
-                        payload.getBoolean("isChecked"),
-                        payload.getInt("intensity"),
-                        payload.getString("color")
-                    )
+                lightDao.updateLightIsCheckedIntensityColor(
+                    subscriberudi,
+                    payload.getBoolean("isChecked"),
+                    payload.getInt("intensity"),
+                    payload.getString("color")
                 )
             }
-            val typeCheckPub = payload.getString("pubType")!!.contentEquals("lightSwitch")
-            val typeCheckSub = payload.getString("subType")!!.contentEquals("lightSwitch")
+            val typeCheckPub = payload.optString("pubType")!!.contentEquals("lightSwitch")
+            val typeCheckSub = payload.optString("subType")!!.contentEquals("lightSwitch")
             if (payloadType.contentEquals("appSync")
                 && (typeCheckPub || typeCheckSub)
-                && (payload.getString("pubUDI")!!.contentEquals(udi)
-                        || payload.getString("subUDI")!!.contentEquals(udi))) {
+                && (payload.getString("pubUDI")!!.contentEquals(UDI)
+                        || payload.getString("subUDI")!!.contentEquals(UDI))) {
                 if (payload.getString("activity")!!.contentEquals("link")) {
                     val lightDao = LightDatabase.getInstance(context).lightDao()
                     lightDao.insertLight(
@@ -418,10 +415,10 @@ class LightRoutine: Runnable {
                     val essential = JSONObject()
                     val targetSubscriber = JSONArray()
                     val requestPayload = JSONObject()
-                    requestPayload.put("thingCode", thingCode)
+                    requestPayload.put("thingCode", THINGCODE)
                     requestPayload.put("state", true)
                     targetSubscriber.put(payload.getString("subUDI"))
-                    essential.put("publisherudi", udi)
+                    essential.put("publisherudi", UDI)
                     essential.put("targetSubscriber", targetSubscriber)
                     essential.put("payloadType", "request")
                     essential.put("payload", requestPayload)
@@ -432,10 +429,10 @@ class LightRoutine: Runnable {
                     if (typeCheckPub) lightDao.deleteLight(payload.getString("pubUDI")) else lightDao.deleteLight(payload.getString("subUDI"))
                 }
             } else if (payloadType.contentEquals("appSync")
-                && (payload.getString("pubUDI")!!.contentEquals(udi)
-                        || payload.getString("subUDI")!!.contentEquals(udi))) {
+                && (payload.getString("pubUDI")!!.contentEquals(UDI)
+                        || payload.getString("subUDI")!!.contentEquals(UDI))) {
                 val deviceDao = DeviceDatabase.getInstance(context).deviceDao()
-                val deviceCheck = payload.getString("subUDI").contentEquals(udi)
+                val deviceCheck = payload.getString("subUDI").contentEquals(UDI)
                 if (payload.getString("activity")!!.contentEquals("link")) {
                     deviceDao.insertDevice(
                         Device(
