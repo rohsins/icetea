@@ -11,6 +11,8 @@ import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.util.Log
+import com.rohsins.icetea.DataModel.DeviceDao
+import com.rohsins.icetea.DataModel.DeviceDatabase
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -23,6 +25,8 @@ class BackgroundService: Service() {
     private var infoChannelId: String? = null
     private var infoNotificationBuilder: NotificationCompat.Builder? = null
     private val kSignalReceiver = KSignalReceiver()
+
+    private lateinit var deviceDao: DeviceDao
 
     override fun onCreate() {
         super.onCreate()
@@ -65,6 +69,8 @@ class BackgroundService: Service() {
         Log.d("VTAG", "starting service")
         val filter = IntentFilter("KSignalReceiverFlag")
 //        registerReceiver(kSignalReceiver, filter)
+        deviceDao = DeviceDatabase.getInstance(this).deviceDao()
+
         startForeground(291, serviceNotificationBuilder!!.build())
         connectivity.configureAndConnectMqtt(applicationContext)
         EventBus.getDefault().register(this)
@@ -108,27 +114,37 @@ class BackgroundService: Service() {
             val jObject = JSONObject(event.mqttMessage.toString())
             val payloadType = jObject.getString("payloadType")
             if (payloadType.contains("alert")) {
-                var title = "Alert"
-                val payload = jObject.getJSONObject("payload")
-                when (payload.getInt("thingCode")) {
-                    308 -> {
-                        title = "Water Spill"
-                    }
-                    309 -> {
-                        title = "Door Sensor"
-                    }
-                    310 -> {
-                        title = "Smoke Sensor"
-                    }
-                    389 -> {
-                        title = "Motion Sensor"
-                    }
+                var title = "Unknown"
+                try {
+                    title = deviceDao.getDevice(jObject.getString("publisherudi")).type.capitalize().replace("Sensor", " Sensor")
+                } catch (e: Exception) {
+                    title = deviceDao.getDevice(jObject.getString("subscriberudi")).type.capitalize().replace("Sensor", " Sensor")
                 }
+                val payload = jObject.getJSONObject("payload")
+//                when (payload.getInt("thingCode")) {
+//                    308 -> {
+//                        title = "Water Spill"
+//                    }
+//                    309 -> {
+//                        title = "Door Sensor"
+//                    }
+//                    310 -> {
+//                        title = "Smoke Sensor"
+//                    }
+//                    389 -> {
+//                        title = "Motion Sensor"
+//                    }
+//                }
                 infoNotificationNotify(
-                    payload.getInt("thingCode"),
+                    deviceDao.getDevice(jObject.getString("publisherudi")).id,
                     title,
-                    payload.getString("message")
-                )
+                    payload.getString("message") + " @ " +
+                        try {
+                            deviceDao.getDeviceAlias(jObject.getString("publisherudi"))
+                        } catch (e: Exception) {
+                            deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
+                        }
+            )
             }
         } catch (e: Exception) {
             e.printStackTrace()

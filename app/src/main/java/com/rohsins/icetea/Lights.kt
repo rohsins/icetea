@@ -12,9 +12,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
 import android.widget.*
 import com.rarepebble.colorpicker.ColorPickerView
-import com.rohsins.icetea.DataModel.Light
-import com.rohsins.icetea.DataModel.LightDao
-import com.rohsins.icetea.DataModel.LightDatabase
+import com.rohsins.icetea.DataModel.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -432,6 +430,23 @@ class LightRoutine: Runnable {
                 } else if (payload.getString("activity")!!.contentEquals("unlink")) {
                     val lightDao = LightDatabase.getInstance(context).lightDao()
                     if (typeCheckPub) lightDao.deleteLight(payload.getString("pubUDI")) else lightDao.deleteLight(payload.getString("subUDI"))
+                }
+            } else if (payloadType.contentEquals("appSync")
+                && (payload.getString("pubUDI")!!.contentEquals(udi)
+                        || payload.getString("subUDI")!!.contentEquals(udi))) {
+                val deviceDao = DeviceDatabase.getInstance(context).deviceDao()
+                val deviceCheck = payload.getString("subUDI").contentEquals(udi)
+                if (payload.getString("activity")!!.contentEquals("link")) {
+                    deviceDao.insertDevice(
+                        Device(
+                            0,
+                            if (deviceCheck) payload.getString("pubUDI") else payload.getString("subUDI"),
+                            if (deviceCheck) payload.getString("pubAlias") else payload.getString("subAlias"),
+                            if (deviceCheck) payload.getString("pubType") else payload.getString("subType")
+                        )
+                    )
+                } else if (payload.getString("activity")!!.contentEquals("unlink")) {
+                    deviceDao.deleteDevice(if (deviceCheck) payload.getString("pubUDI") else payload.getString("subUDI"))
                 }
             }
         } catch (e: Exception) {
