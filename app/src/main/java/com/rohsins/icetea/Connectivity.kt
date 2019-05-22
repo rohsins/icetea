@@ -21,7 +21,7 @@ import org.greenrobot.eventbus.EventBus
 private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
 private const val mqttUserName = "rts" // fixed
 private const val mqttPassword = "rts" // fixed
-const val UDI = "710829d688052940" // Arbitrary
+const val UDI = "918429f680052385" // Arbitrary
 const val THINGCODE = 12001 //androidMobile
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$UDI" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$UDI" // fixed

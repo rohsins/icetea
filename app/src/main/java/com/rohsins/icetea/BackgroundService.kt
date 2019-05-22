@@ -99,7 +99,7 @@ class BackgroundService: Service() {
         infoNotificationBuilder!!.setContentText(msg)
         infoNotificationBuilder!!.priority = Notification.PRIORITY_HIGH
         infoNotificationBuilder!!.setAutoCancel(true)
-        infoNotificationBuilder!!.setShowWhen(true)
+        infoNotificationBuilder!!.setWhen(System.currentTimeMillis())
         infoNotificationBuilder!!.setDefaults(Notification.DEFAULT_SOUND or Notification.DEFAULT_LIGHTS)
         with(NotificationManagerCompat.from(this)) {
             notify(id, infoNotificationBuilder!!.build())

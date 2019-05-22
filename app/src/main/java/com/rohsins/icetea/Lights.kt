@@ -173,7 +173,7 @@ class Lights : AppCompatActivity() {
             seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     this@LightElement.intensity = seekBar!!.progress
-                    lightSend(1)
+                    lightSend(1, "intensity")
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -183,7 +183,7 @@ class Lights : AppCompatActivity() {
 //                    this@LightElement.intensity = seekBar!!.progress
 //                    Toast.makeText(this@Lights, seekBar?.progress.toString(), Toast.LENGTH_SHORT).show()
 //                    lightDao.updateLight(Light(this@LightElement.udi, this@LightElement.alias, this@LightElement.isChecked, this@LightElement.intensity, this@LightElement.color))
-                    lightSend(2)
+                    lightSend(2, "intensity")
                 }
             })
         }
@@ -197,7 +197,7 @@ class Lights : AppCompatActivity() {
                     enableLight()
                 }
 //                lightDao.updateLight(Light(this.udi, this.alias, this.isChecked, this.intensity, this.color))
-                lightSend(2)
+                lightSend(2, "isChecked")
             }
         }
 
@@ -214,7 +214,7 @@ class Lights : AppCompatActivity() {
                         val previewColor = '#' + it.color.toUInt().toString(16)
                         if (this.color != previewColor) {
                             this.color = previewColor
-                            lightSend(1)
+                            lightSend(1, "color")
                         }
                     }
 
@@ -224,22 +224,22 @@ class Lights : AppCompatActivity() {
                         this.color = previousColor
                         changeColor(previousColor)
 //                        lightDao.updateLight(Light(this.udi, this.alias, this.isChecked, this.intensity, this.color))
-                        lightSend(2)
+                        lightSend(2, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
                         this.color = previousColor
-                        lightSend(1)
+                        lightSend(1, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnDismissListener {
                         this.color = previousColor
-                        lightSend(1)
+                        lightSend(1, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnCancelListener {
                         this.color = previousColor
-                        lightSend(1)
+                        lightSend(1, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     val alertDialog = alertDialogBuilder.create()
@@ -257,6 +257,34 @@ class Lights : AppCompatActivity() {
             payload.put("isChecked", this.isChecked)
             payload.put("intensity", this.intensity)
             payload.put("color", this.color)
+            val essential = JSONObject()
+            essential.put("publisherudi", UDI)
+            val targetSubscriber = JSONArray()
+            targetSubscriber.put(this.udi)
+            val mqttPacket = JSONObject()
+            mqttPacket.put("qos", qos)
+            essential.put("targetSubscriber", targetSubscriber)
+            if (qos == 2) {
+                essential.put("payloadType", "command")
+            } else {
+                essential.put("payloadType", "preview")
+            }
+            essential.put("mqttPacket", mqttPacket)
+            essential.put("payload", payload)
+            val packedJson = JSONObject()
+            packedJson.put("essential", essential)
+            connectivity.mqttPublish(packedJson.toString().toByteArray(), qos)
+        }
+
+        private fun lightSend(qos: Int, selector: String) {
+            val payload = JSONObject()
+            payload.put("thingCode", THINGCODE)
+            when (selector) {
+            // "alias" -> payload.put("alias", this.alias)
+            "isChecked" -> payload.put("isChecked", this.isChecked)
+            "intensity" -> payload.put("intensity", this.intensity)
+            "color" -> payload.put("color", this.color)
+            }
             val essential = JSONObject()
             essential.put("publisherudi", UDI)
             val targetSubscriber = JSONArray()
