@@ -21,7 +21,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 val lightsViewUpdateLock = Object()
-var enablePreview = false
+var enablePreview = true
 
 class Lights : AppCompatActivity() {
 
