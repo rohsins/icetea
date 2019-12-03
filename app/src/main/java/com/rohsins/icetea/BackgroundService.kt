@@ -5,12 +5,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
 import com.rohsins.icetea.DataModel.DeviceDao
 import com.rohsins.icetea.DataModel.DeviceDatabase
 import org.greenrobot.eventbus.EventBus
@@ -144,7 +150,31 @@ class BackgroundService: Service() {
                         } catch (e: Exception) {
                             deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
                         }
-            )
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    val windowManager = getSystemService(AppCompatActivity.WINDOW_SERVICE) as WindowManager
+
+                    lateinit var inflater: LayoutInflater
+                    lateinit var view: View
+                    lateinit var layoutParams: WindowManager.LayoutParams
+
+                    inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+                    view = inflater.inflate(R.layout.popup, null)
+
+                    layoutParams = WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                        PixelFormat.TRANSLUCENT
+                    )
+
+                    layoutParams.gravity = Gravity.CENTER
+                    layoutParams.x = 0
+                    layoutParams.y = 0
+
+                    windowManager.addView(view, layoutParams)
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
