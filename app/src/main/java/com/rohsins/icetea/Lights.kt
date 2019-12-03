@@ -21,6 +21,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 val lightsViewUpdateLock = Object()
+var enablePreview = true
 
 class Lights : AppCompatActivity() {
 
@@ -173,7 +174,7 @@ class Lights : AppCompatActivity() {
             seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     this@LightElement.intensity = seekBar!!.progress
-                    lightSend(1, "intensity")
+                    if (enablePreview) lightSend(1, "intensity")
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -212,7 +213,7 @@ class Lights : AppCompatActivity() {
                     colorPickerView.showPreview(true)
                     colorPickerView.addColorObserver {
                         val previewColor = '#' + it.color.toUInt().toString(16)
-                        if (this.color != previewColor) {
+                        if (this.color != previewColor && enablePreview) {
                             this.color = previewColor
                             lightSend(1, "color")
                         }
@@ -229,17 +230,17 @@ class Lights : AppCompatActivity() {
                     }
                     alertDialogBuilder.setNegativeButton("Cancel") { dialog, which ->
                         this.color = previousColor
-                        lightSend(1, "color")
+                        if (enablePreview) lightSend(1, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnDismissListener {
                         this.color = previousColor
-                        lightSend(1, "color")
+                        if (enablePreview) lightSend(1, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     alertDialogBuilder.setOnCancelListener {
                         this.color = previousColor
-                        lightSend(1, "color")
+                        if (enablePreview) lightSend(1, "color")
                         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
                     }
                     val alertDialog = alertDialogBuilder.create()
