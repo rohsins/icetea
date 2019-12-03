@@ -18,10 +18,10 @@ import java.net.ConnectException
 import java.net.Socket
 import org.greenrobot.eventbus.EventBus
 
-private const val mqttURI = "tcp://hardware.wscada.net:1883" // fixed
-private const val mqttUserName = "rts" // fixed
-private const val mqttPassword = "rts" // fixed
-const val UDI = "918429f680052385" // Arbitrary
+private const val mqttURI = "tcp://rohitsingh.com.np:1883" // fixed
+private const val mqttUserName = "rohsins" // fixed
+private const val mqttPassword = "escapecharacters" // fixed
+const val UDI = "918429f680052380" // Arbitrary
 const val THINGCODE = 12001 //androidMobile
 private const val subscribeTopic = "RTSR&D/baanvak/sub/$UDI" // fixed
 private const val publishTopic = "RTSR&D/baanvak/pub/$UDI" // fixed
