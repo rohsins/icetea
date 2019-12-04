@@ -5,26 +5,26 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.WindowManager
 import com.rohsins.icetea.DataModel.DeviceDao
 import com.rohsins.icetea.DataModel.DeviceDatabase
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.json.JSONObject
+import android.view.*
+import android.view.WindowManager.LayoutParams
+import android.widget.FrameLayout
+import android.widget.TextView
 
-class BackgroundService: Service() {
+class BackgroundService: Service(), View.OnTouchListener {
     private var serviceChannelId: String? = null
     private var serviceNotificationBuilder: NotificationCompat.Builder? = null
     private var serviceNotificationManager: NotificationManager? = null
@@ -34,8 +34,23 @@ class BackgroundService: Service() {
 
     private lateinit var deviceDao: DeviceDao
 
+    private lateinit var windowManager: WindowManager
+
+    private lateinit var frameLayout: FrameLayout
+
+    private var viewOccupied = false
+
     override fun onCreate() {
         super.onCreate()
+
+        frameLayout = FrameLayout(applicationContext)
+        val frameLayoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.START)
+        frameLayoutParams.setMargins(dp(40), dp(40), dp(40), dp(40))
+        frameLayout.layoutParams = frameLayoutParams
+        frameLayout.background = getDrawable(R.drawable.popup_view)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             serviceChannelId = createServiceNotificationChannel("183290", "Foreground Service Channel")
@@ -73,7 +88,7 @@ class BackgroundService: Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int) : Int {
         Log.d("VTAG", "starting service")
-        val filter = IntentFilter("KSignalReceiverFlag")
+//        val filter = IntentFilter("KSignalReceiverFlag")
 //        registerReceiver(kSignalReceiver, filter)
         deviceDao = DeviceDatabase.getInstance(this).deviceDao()
 
@@ -112,7 +127,7 @@ class BackgroundService: Service() {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
     fun onMessage(event: MessageEvent) {
         Thread(LightRoutine(event, this)).start()
 
@@ -120,7 +135,7 @@ class BackgroundService: Service() {
             val jObject = JSONObject(event.mqttMessage.toString())
             val payloadType = jObject.getString("payloadType")
             if (payloadType.contains("alert")) {
-                var title = "Unknown"
+                lateinit var title: String // = "Unknown"
                 try {
                     title = deviceDao.getDevice(jObject.getString("publisherudi")).type.capitalize().replace("Sensor", " Sensor")
                 } catch (e: Exception) {
@@ -151,30 +166,8 @@ class BackgroundService: Service() {
                             deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
                         }
                 )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                    val windowManager = getSystemService(AppCompatActivity.WINDOW_SERVICE) as WindowManager
-
-                    lateinit var inflater: LayoutInflater
-                    lateinit var view: View
-                    lateinit var layoutParams: WindowManager.LayoutParams
-
-                    inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-                    view = inflater.inflate(R.layout.popup, null)
-
-                    layoutParams = WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                        PixelFormat.TRANSLUCENT
-                    )
-
-                    layoutParams.gravity = Gravity.CENTER
-                    layoutParams.x = 0
-                    layoutParams.y = 0
-
-                    windowManager.addView(view, layoutParams)
-                }
+                Log.i("popup", "before handler")
+                popup(payload.getString("message"))
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -198,5 +191,78 @@ class BackgroundService: Service() {
 //            KSignalTrigger(30000)
             Log.d("VTAG", "KSignal Triggered")
         }
+    }
+
+    private fun popup(textArg: String) {
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
+        val layoutParamsType: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            @Suppress("DEPRECATION")
+            LayoutParams.TYPE_PHONE
+        }
+        val layoutParams = LayoutParams(
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.WRAP_CONTENT,
+            layoutParamsType,
+            0,
+            PixelFormat.TRANSLUCENT
+        )
+
+        layoutParams.gravity = Gravity.CENTER or Gravity.START
+        layoutParams.x = 0
+        layoutParams.y = 0
+
+        val interceptorLayout = object : FrameLayout(this) {
+
+            override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+
+                // Only fire on the ACTION_DOWN event, or you'll get two events (one for _DOWN, one for _UP)
+                if (event.action == KeyEvent.ACTION_DOWN) {
+
+                    // Check if the HOME button is pressed
+                    if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+
+                        Log.v("popup", "BACK Button Pressed")
+
+                        return true
+                    }
+                }
+
+                return super.dispatchKeyEvent(event)
+            }
+        }
+
+        val popupText = TextView(applicationContext)
+        popupText.setTextColor(Color.BLACK)
+        popupText.text = textArg
+
+        frameLayout?.let {
+            it.setOnTouchListener(this)
+           if (!viewOccupied) {
+               frameLayout.addView(popupText)
+               windowManager.addView(frameLayout, layoutParams)
+               viewOccupied = true
+           } else {
+               frameLayout.removeAllViews()
+               frameLayout.addView(popupText)
+               windowManager.updateViewLayout(frameLayout, layoutParams)
+           }
+        }
+
+        Log.i("popup", "ran")
+    }
+
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+        v?.performClick()
+        windowManager.removeView(v)
+        viewOccupied = false
+        return true
+    }
+
+    private fun dp(dp: Int): Int {
+        val density = resources.displayMetrics.density
+        return Math.round(dp.toFloat() * density)
     }
 }
