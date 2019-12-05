@@ -1,10 +1,13 @@
 package com.rohsins.icetea
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.*
 import android.provider.Settings
 import android.support.annotation.RequiresApi
+import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.widget.AdapterView
 import android.widget.Toast
@@ -16,6 +19,25 @@ class MainActivity : AppCompatActivity() {
     companion object {
         var serviceRunning = false
         private const val REQUEST_CODE = 10101
+        private const val LOCATION_PERMISSION_ID = 42
+        var locationPermission = false
+    }
+
+    fun checkLocationPermissions(): Boolean {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            locationPermission = true
+            return true
+        }
+        locationPermission = false
+        return false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +78,14 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             TODO("VERSION.SDK_INT < M")
+        }
+
+        if (!checkLocationPermissions()) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_ID
+            )
         }
     }
 

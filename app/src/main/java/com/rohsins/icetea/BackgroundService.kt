@@ -1,17 +1,26 @@
 package com.rohsins.icetea
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.support.annotation.RequiresApi
+import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
+import android.util.JsonWriter
 import android.util.Log
 import com.rohsins.icetea.DataModel.DeviceDao
 import com.rohsins.icetea.DataModel.DeviceDatabase
@@ -24,6 +33,7 @@ import android.view.WindowManager.LayoutParams
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import org.json.JSONStringer
 
 class BackgroundService: Service(), View.OnTouchListener {
     private var serviceChannelId: String? = null
@@ -36,12 +46,17 @@ class BackgroundService: Service(), View.OnTouchListener {
     private lateinit var deviceDao: DeviceDao
 
     private lateinit var windowManager: WindowManager
-
     private lateinit var linearLayout: LinearLayout
     private lateinit var frameLayout: FrameLayout
-
     private var viewOccupied = false
 
+    private lateinit var locationManager: LocationManager
+    private var locationTimeCheck: Long = 0
+    private var locationLatitude: Double = 0.0
+    private var locationLongitude: Double = 0.0
+    private var locationAltitude: Double = 0.0
+
+    @SuppressLint("MissingPermission")
     override fun onCreate() {
         super.onCreate()
 
@@ -54,6 +69,20 @@ class BackgroundService: Service(), View.OnTouchListener {
         frameLayoutParams.setMargins(dp(20), dp(20), dp(20), dp(20))
         frameLayout.layoutParams = frameLayoutParams
         frameLayout.background = getDrawable(R.drawable.popup_view)
+
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        if ((locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+            && MainActivity.locationPermission) {
+            Log.i("location", "requesting location")
+            locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                0L,
+                0f,
+                locationListener
+            )
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             serviceChannelId = createServiceNotificationChannel("183290", "Foreground Service Channel")
@@ -108,6 +137,7 @@ class BackgroundService: Service(), View.OnTouchListener {
 
     override fun onDestroy() {
         Log.d("VTAG", "killing service")
+        locationManager.removeUpdates(locationListener)
         connectivity.unconfigureAndDisconnectMqttForcibly()
 //        unregisterReceiver(kSignalReceiver)
         EventBus.getDefault().unregister(this)
@@ -251,5 +281,46 @@ class BackgroundService: Service(), View.OnTouchListener {
     private fun dp(dp: Int): Int {
         val density = resources.displayMetrics.density
         return Math.round(dp.toFloat() * density)
+    }
+
+    private val locationListener = object: LocationListener {
+        override fun onLocationChanged(location: Location?) {
+            if (((location!!.time - locationTimeCheck) > 60000)
+                && ((location!!.latitude != locationLatitude)
+                    || location!!.longitude != locationLongitude
+                    || location!!.altitude != locationAltitude)) {
+                locationTimeCheck = location!!.time
+                locationLatitude = location!!.latitude
+                locationLongitude = location!!.longitude
+                locationAltitude = location!!.altitude
+
+                val locationJSON = JSONObject()
+                locationJSON.put("latitude", location.latitude.toFloat())
+                locationJSON.put("longitude", location.longitude.toFloat())
+                locationJSON.put("altitude", location.altitude)
+                val extraJSON = JSONObject()
+                extraJSON.put("location", locationJSON)
+                val essentialJSON = JSONObject()
+                essentialJSON.put("publisherudi", UDI)
+                essentialJSON.put("payloadType", "info")
+                val updateJSON = JSONObject()
+                updateJSON.put("essential", essentialJSON)
+                updateJSON.put("extra", extraJSON)
+                connectivity.mqttPublish(updateJSON.toString().toByteArray())
+                Log.i("location", "location changed and location published")
+            }
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            Log.i("location", "status changed")
+        }
+
+        override fun onProviderEnabled(provider: String?) {
+            Log.i("location", "provider enabled")
+        }
+
+        override fun onProviderDisabled(provider: String?) {
+            Log.i("location", "provider disabled")
+        }
     }
 }
