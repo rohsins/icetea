@@ -4,11 +4,13 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import android.support.annotation.RequiresApi
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.widget.AdapterView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
@@ -67,6 +69,8 @@ class MainActivity : AppCompatActivity() {
                     stopService(intent)
                 }
                 Toast.makeText(this, "killing service", Toast.LENGTH_SHORT).show()
+            } else if (position == 8) {
+                Toast.makeText(this, UDI, Toast.LENGTH_LONG).show()
             }
         }
 

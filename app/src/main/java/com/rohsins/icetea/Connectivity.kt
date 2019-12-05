@@ -1,32 +1,35 @@
 package com.rohsins.icetea
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.Handler
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import com.android.volley.AuthFailureError
+import com.android.volley.Response
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
 import java.lang.Exception
 import java.net.ConnectException
 import java.net.Socket
 import org.greenrobot.eventbus.EventBus
+import org.json.JSONObject
 
 private const val mqttURI = "tcp://rohitsingh.com.np:1883" // fixed
 private const val mqttUserName = "rohsins" // fixed
 private const val mqttPassword = "escapecharacters" // fixed
-const val UDI = "918429f680052380" // Arbitrary
+var UDI = "null" // Arbitrary
 const val THINGCODE = 12001 //androidMobile
-private const val subscribeTopic = "RTSR&D/baanvak/sub/$UDI" // fixed
-private const val publishTopic = "RTSR&D/baanvak/pub/$UDI" // fixed
+private var subscribeTopic = "RTSR&D/baanvak/sub/$UDI" // fixed
+private var publishTopic = "RTSR&D/baanvak/pub/$UDI" // fixed
 private var mqttConfigured = false
 private var connectRequest = false
+private const val registrationTopic = "RTSR&D/baanvak/ureq"
 
 class Connectivity : BroadcastReceiver() {
     private var useMqtt = true
@@ -44,6 +47,61 @@ class Connectivity : BroadcastReceiver() {
     private var mqttApplicationContext: Context? = null
     private var mqttConnectLock: Boolean = false
     private lateinit var mqttClient: MqttAndroidClient
+
+    private lateinit var sharedPreferences: SharedPreferences
+
+    private fun setUDI(udi: String) {
+        UDI = udi
+        subscribeTopic = "RTSR&D/baanvak/sub/$UDI"
+        publishTopic = "RTSR&D/baanvak/pub/$UDI"
+    }
+
+    private fun udiRoutine() {
+        sharedPreferences = mqttApplicationContext!!.getSharedPreferences("udiStore", 0)
+        if (sharedPreferences.getString("UDI", "null") != "null") {
+            setUDI(sharedPreferences.getString("UDI", "null"))
+        } else {
+            val processorID = Settings.Secure.getString(mqttApplicationContext!!.contentResolver, Settings.Secure.ANDROID_ID)
+            val queue = Volley.newRequestQueue(mqttApplicationContext)
+            val url = "http://developer.wscada.net:88/api/device/register"
+
+            val stringRequest = object : StringRequest(
+                Method.POST, url,
+                Response.Listener<String> { response ->
+                    if (response.toString().length == 16) {
+                        val registrationJSON = JSONObject()
+                        registrationJSON.put("udi", response.toString())
+                        val mqttMessageRegistration = MqttMessage()
+                        mqttMessageRegistration.payload = registrationJSON.toString().toByteArray()
+                        mqttMessageRegistration.qos = 2
+                        mqttClient.publish(registrationTopic, mqttMessageRegistration)
+                        with(sharedPreferences.edit()) {
+                            putString("UDI", response.toString())
+                            commit()
+                        }
+                    } else {
+                    }
+                },
+                Response.ErrorListener { error ->
+                    error.printStackTrace()
+                }
+            ) {
+                override fun getBodyContentType(): String? {
+                    return "application/json"
+                }
+
+                @Throws(AuthFailureError::class)
+                override fun getBody(): ByteArray? {
+                    val requestJSON = JSONObject()
+                    requestJSON.put("messagingPattern", "subscriber+")
+                    requestJSON.put("type", "rDevice")
+                    requestJSON.put("processorID", processorID)
+                    return requestJSON.toString().toByteArray()
+                }
+            }
+            queue!!.add(stringRequest)
+        }
+    }
 
     fun mqttPublish(mqttMessage: MqttMessage) {
         Thread(PublishRunnable(mqttMessage)).start()
@@ -162,8 +220,11 @@ class Connectivity : BroadcastReceiver() {
         override fun connectComplete(reconnect: Boolean, serverURI: String?) {
             Log.d("VTAG", "Connection Complete")
             if (firstTimeMqttConnect) {
-                mqttSubscribe(subscribeTopic)
                 firstTimeMqttConnect = false
+                if (UDI == "null") {
+                    udiRoutine()
+                }
+                mqttSubscribe(subscribeTopic)
             }
             mqttClient.publish("android/pub/ConnectInfo", "Device: $UDI Connected".toByteArray(), 2,false)
         }
