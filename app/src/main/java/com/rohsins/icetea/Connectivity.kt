@@ -94,7 +94,7 @@ class Connectivity : BroadcastReceiver() {
                 override fun getBody(): ByteArray? {
                     val requestJSON = JSONObject()
                     requestJSON.put("messagingPattern", "subscriber+")
-                    requestJSON.put("type", "rDevice")
+                    requestJSON.put("type", "androidMobile")
                     requestJSON.put("processorID", processorID)
                     return requestJSON.toString().toByteArray()
                 }

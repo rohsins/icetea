@@ -52,9 +52,9 @@ class BackgroundService: Service(), View.OnTouchListener {
 
     private lateinit var locationManager: LocationManager
     private var locationTimeCheck: Long = 0
-    private var locationLatitude: Double = 0.0
-    private var locationLongitude: Double = 0.0
-    private var locationAltitude: Double = 0.0
+    private var locationLatitude: Float = 0f
+    private var locationLongitude: Float = 0f
+    private var locationAltitude: Float = 0f
 
     @SuppressLint("MissingPermission")
     override fun onCreate() {
@@ -160,7 +160,7 @@ class BackgroundService: Service(), View.OnTouchListener {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
     fun onMessage(event: MessageEvent) {
         Thread(LightRoutine(event, this)).start()
 
@@ -286,18 +286,17 @@ class BackgroundService: Service(), View.OnTouchListener {
     private val locationListener = object: LocationListener {
         override fun onLocationChanged(location: Location?) {
             if (((location!!.time - locationTimeCheck) > 60000)
-                && ((location!!.latitude != locationLatitude)
-                    || location!!.longitude != locationLongitude
-                    || location!!.altitude != locationAltitude)) {
+                && ((location!!.latitude.toFloat() != locationLatitude)
+                    || location!!.longitude.toFloat() != locationLongitude)) {
                 locationTimeCheck = location!!.time
-                locationLatitude = location!!.latitude
-                locationLongitude = location!!.longitude
-                locationAltitude = location!!.altitude
+                locationLatitude = location!!.latitude.toFloat()
+                locationLongitude = location!!.longitude.toFloat()
+                locationAltitude = location!!.altitude.toFloat()
 
                 val locationJSON = JSONObject()
-                locationJSON.put("latitude", location.latitude.toFloat())
-                locationJSON.put("longitude", location.longitude.toFloat())
-                locationJSON.put("altitude", location.altitude)
+                locationJSON.put("latitude", locationLatitude)
+                locationJSON.put("longitude", locationLongitude)
+                locationJSON.put("altitude", locationAltitude)
                 val extraJSON = JSONObject()
                 extraJSON.put("location", locationJSON)
                 val essentialJSON = JSONObject()
