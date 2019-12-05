@@ -22,6 +22,7 @@ import org.json.JSONObject
 import android.view.*
 import android.view.WindowManager.LayoutParams
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 
 class BackgroundService: Service(), View.OnTouchListener {
@@ -36,6 +37,7 @@ class BackgroundService: Service(), View.OnTouchListener {
 
     private lateinit var windowManager: WindowManager
 
+    private lateinit var linearLayout: LinearLayout
     private lateinit var frameLayout: FrameLayout
 
     private var viewOccupied = false
@@ -43,12 +45,13 @@ class BackgroundService: Service(), View.OnTouchListener {
     override fun onCreate() {
         super.onCreate()
 
+        linearLayout = LinearLayout(applicationContext)
         frameLayout = FrameLayout(applicationContext)
         val frameLayoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.START)
-        frameLayoutParams.setMargins(dp(40), dp(40), dp(40), dp(40))
+        frameLayoutParams.setMargins(dp(20), dp(20), dp(20), dp(20))
         frameLayout.layoutParams = frameLayoutParams
         frameLayout.background = getDrawable(R.drawable.popup_view)
 
@@ -134,6 +137,7 @@ class BackgroundService: Service(), View.OnTouchListener {
         try {
             val jObject = JSONObject(event.mqttMessage.toString())
             val payloadType = jObject.getString("payloadType")
+            val payload = jObject.getJSONObject("payload")
             if (payloadType.contains("alert")) {
                 lateinit var title: String // = "Unknown"
                 try {
@@ -141,7 +145,6 @@ class BackgroundService: Service(), View.OnTouchListener {
                 } catch (e: Exception) {
                     title = deviceDao.getDevice(jObject.getString("subscriberudi")).type.capitalize().replace("Sensor", " Sensor")
                 }
-                val payload = jObject.getJSONObject("payload")
 //                when (payload.getInt("thingCode")) {
 //                    308 -> {
 //                        title = "Water Spill"
@@ -166,7 +169,7 @@ class BackgroundService: Service(), View.OnTouchListener {
                             deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
                         }
                 )
-                Log.i("popup", "before handler")
+            } else if (payloadType.contains("cap")) {
                 popup(payload.getString("message"))
             }
         } catch (e: Exception) {
@@ -211,43 +214,25 @@ class BackgroundService: Service(), View.OnTouchListener {
         )
 
         layoutParams.gravity = Gravity.CENTER or Gravity.START
-        layoutParams.x = 0
-        layoutParams.y = 0
-
-        val interceptorLayout = object : FrameLayout(this) {
-
-            override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-
-                // Only fire on the ACTION_DOWN event, or you'll get two events (one for _DOWN, one for _UP)
-                if (event.action == KeyEvent.ACTION_DOWN) {
-
-                    // Check if the HOME button is pressed
-                    if (event.keyCode == KeyEvent.KEYCODE_BACK) {
-
-                        Log.v("popup", "BACK Button Pressed")
-
-                        return true
-                    }
-                }
-
-                return super.dispatchKeyEvent(event)
-            }
-        }
 
         val popupText = TextView(applicationContext)
+        popupText.textSize = 20f
         popupText.setTextColor(Color.BLACK)
         popupText.text = textArg
 
-        frameLayout?.let {
+        linearLayout?.let {
             it.setOnTouchListener(this)
            if (!viewOccupied) {
                frameLayout.addView(popupText)
-               windowManager.addView(frameLayout, layoutParams)
+               linearLayout.addView(frameLayout)
+               windowManager.addView(linearLayout, layoutParams)
                viewOccupied = true
            } else {
                frameLayout.removeAllViews()
                frameLayout.addView(popupText)
-               windowManager.updateViewLayout(frameLayout, layoutParams)
+               linearLayout.removeAllViews()
+               linearLayout.addView(frameLayout)
+               windowManager.updateViewLayout(linearLayout, layoutParams)
            }
         }
 
@@ -256,6 +241,8 @@ class BackgroundService: Service(), View.OnTouchListener {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         v?.performClick()
+        frameLayout.removeAllViews()
+        linearLayout.removeAllViews()
         windowManager.removeView(v)
         viewOccupied = false
         return true
