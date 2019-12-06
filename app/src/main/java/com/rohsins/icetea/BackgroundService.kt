@@ -88,16 +88,15 @@ class BackgroundService: Service() {
             popupText.setTextColor(Color.BLACK)
             popupText.text = textArg
 
-            Log.i("popup", "before thing")
             linearLayout?.let {
-                it.setOnTouchListener(View.OnTouchListener { v, event ->
+                it.setOnTouchListener { v, _ ->
                     v?.performClick()
                     frameLayout.removeAllViews()
                     linearLayout.removeAllViews()
                     windowManager.removeView(v)
                     viewOccupied = false
                     true
-                })
+                }
                 if (!viewOccupied) {
                     frameLayout.addView(popupText)
                     linearLayout.addView(frameLayout)
@@ -111,8 +110,6 @@ class BackgroundService: Service() {
                     windowManager.updateViewLayout(linearLayout, layoutParams)
                 }
             }
-
-            Log.i("popup", "ran")
         }
     }
 
@@ -142,8 +139,8 @@ class BackgroundService: Service() {
             Log.i("location", "requesting location")
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
-                0L,
-                0f,
+                60000L,
+                5f,
                 locationListener
             )
         }
@@ -264,6 +261,22 @@ class BackgroundService: Service() {
                         }
                 )
             } else if (payloadType.contains("cap")) {
+                lateinit var title: String // = "Unknown"
+                try {
+                    title = deviceDao.getDevice(jObject.getString("publisherudi")).type.capitalize().replace("Sensor", " Sensor")
+                } catch (e: Exception) {
+                    title = deviceDao.getDevice(jObject.getString("subscriberudi")).type.capitalize().replace("Sensor", " Sensor")
+                }
+                infoNotificationNotify(
+                    deviceDao.getDevice(jObject.getString("publisherudi")).id,
+                    title,
+                    payload.getString("message") + " @ " +
+                            try {
+                                deviceDao.getDeviceAlias(jObject.getString("publisherudi"))
+                            } catch (e: Exception) {
+                                deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
+                            }
+                )
                 popup(payload.getString("message"))
             }
         } catch (e: Exception) {
@@ -297,6 +310,7 @@ class BackgroundService: Service() {
 
     private val locationListener = object: LocationListener {
         override fun onLocationChanged(location: Location?) {
+            Log.i("location", "location changed and location published" + "\r\n" + location)
             if (((location!!.time - locationTimeCheck) > 60000)
                 && ((location!!.latitude.toFloat() != locationLatitude)
                     || location!!.longitude.toFloat() != locationLongitude)) {
@@ -318,7 +332,6 @@ class BackgroundService: Service() {
                 updateJSON.put("essential", essentialJSON)
                 updateJSON.put("extra", extraJSON)
                 connectivity.mqttPublish(updateJSON.toString().toByteArray())
-                Log.i("location", "location changed and location published")
             }
         }
 
@@ -326,11 +339,24 @@ class BackgroundService: Service() {
             Log.i("location", "status changed")
         }
 
+        @SuppressLint("MissingPermission")
         override fun onProviderEnabled(provider: String?) {
+            if ((locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                        || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+                && MainActivity.locationPermission) {
+                Log.i("location", "requesting location")
+                locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    60000L,
+                    5f,
+                    this
+                )
+            }
             Log.i("location", "provider enabled")
         }
 
         override fun onProviderDisabled(provider: String?) {
+            locationManager.removeUpdates(this)
             Log.i("location", "provider disabled")
         }
     }
