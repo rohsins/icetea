@@ -15,6 +15,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.ActivityCompat
@@ -35,7 +36,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONStringer
 
-class BackgroundService: Service(), View.OnTouchListener {
+class BackgroundService: Service() {
     private var serviceChannelId: String? = null
     private var serviceNotificationBuilder: NotificationCompat.Builder? = null
     private var serviceNotificationManager: NotificationManager? = null
@@ -55,6 +56,69 @@ class BackgroundService: Service(), View.OnTouchListener {
     private var locationLatitude: Float = 0f
     private var locationLongitude: Float = 0f
     private var locationAltitude: Float = 0f
+
+    private inner class PopupRunnable: Runnable {
+        private var textArg: String
+
+        constructor(textRunnableArg: String) {
+            this.textArg = textRunnableArg
+        }
+
+        override fun run() {
+            windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
+            val layoutParamsType: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                LayoutParams.TYPE_PHONE
+            }
+            val layoutParams = LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT,
+                layoutParamsType,
+                0,
+                PixelFormat.TRANSLUCENT
+            )
+
+            layoutParams.gravity = Gravity.CENTER or Gravity.START
+
+            val popupText = TextView(applicationContext)
+            popupText.textSize = 20f
+            popupText.setTextColor(Color.BLACK)
+            popupText.text = textArg
+
+            Log.i("popup", "before thing")
+            linearLayout?.let {
+                it.setOnTouchListener(View.OnTouchListener { v, event ->
+                    v?.performClick()
+                    frameLayout.removeAllViews()
+                    linearLayout.removeAllViews()
+                    windowManager.removeView(v)
+                    viewOccupied = false
+                    true
+                })
+                if (!viewOccupied) {
+                    frameLayout.addView(popupText)
+                    linearLayout.addView(frameLayout)
+                    windowManager.addView(linearLayout, layoutParams)
+                    viewOccupied = true
+                } else {
+                    frameLayout.removeAllViews()
+                    frameLayout.addView(popupText)
+                    linearLayout.removeAllViews()
+                    linearLayout.addView(frameLayout)
+                    windowManager.updateViewLayout(linearLayout, layoutParams)
+                }
+            }
+
+            Log.i("popup", "ran")
+        }
+    }
+
+    private fun popup(text: String) {
+        handler.post(PopupRunnable(text))
+    }
 
     @SuppressLint("MissingPermission")
     override fun onCreate() {
@@ -224,58 +288,6 @@ class BackgroundService: Service(), View.OnTouchListener {
 //            KSignalTrigger(30000)
             Log.d("VTAG", "KSignal Triggered")
         }
-    }
-
-    private fun popup(textArg: String) {
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-
-        val layoutParamsType: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            @Suppress("DEPRECATION")
-            LayoutParams.TYPE_PHONE
-        }
-        val layoutParams = LayoutParams(
-            LayoutParams.MATCH_PARENT,
-            LayoutParams.WRAP_CONTENT,
-            layoutParamsType,
-            0,
-            PixelFormat.TRANSLUCENT
-        )
-
-        layoutParams.gravity = Gravity.CENTER or Gravity.START
-
-        val popupText = TextView(applicationContext)
-        popupText.textSize = 20f
-        popupText.setTextColor(Color.BLACK)
-        popupText.text = textArg
-
-        linearLayout?.let {
-            it.setOnTouchListener(this)
-           if (!viewOccupied) {
-               frameLayout.addView(popupText)
-               linearLayout.addView(frameLayout)
-               windowManager.addView(linearLayout, layoutParams)
-               viewOccupied = true
-           } else {
-               frameLayout.removeAllViews()
-               frameLayout.addView(popupText)
-               linearLayout.removeAllViews()
-               linearLayout.addView(frameLayout)
-               windowManager.updateViewLayout(linearLayout, layoutParams)
-           }
-        }
-
-        Log.i("popup", "ran")
-    }
-
-    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-        v?.performClick()
-        frameLayout.removeAllViews()
-        linearLayout.removeAllViews()
-        windowManager.removeView(v)
-        viewOccupied = false
-        return true
     }
 
     private fun dp(dp: Int): Int {

@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.Settings
 import android.support.annotation.RequiresApi
 import android.support.v4.app.ActivityCompat
@@ -16,6 +17,8 @@ import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 
 val connectivity: Connectivity = Connectivity()
+
+val handler: Handler = Handler()
 
 class MainActivity : AppCompatActivity() {
     companion object {
