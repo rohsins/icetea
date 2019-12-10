@@ -1,13 +1,10 @@
 package com.rohsins.icetea
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.location.Location
@@ -15,26 +12,25 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
 import android.support.annotation.RequiresApi
-import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
-import android.util.JsonWriter
 import android.util.Log
+import android.view.Gravity
+import android.view.WindowManager
+import android.view.WindowManager.LayoutParams
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import com.rohsins.icetea.DataModel.DeviceDao
 import com.rohsins.icetea.DataModel.DeviceDatabase
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.json.JSONObject
-import android.view.*
-import android.view.WindowManager.LayoutParams
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.TextView
-import org.json.JSONStringer
+import kotlin.math.round
+import kotlin.math.roundToInt
 
 class BackgroundService: Service() {
     private var serviceChannelId: String? = null
@@ -299,12 +295,12 @@ class BackgroundService: Service() {
 
     private fun dp(dp: Int): Int {
         val density = resources.displayMetrics.density
-        return Math.round(dp.toFloat() * density)
+        return round(dp.toFloat() * density).roundToInt()
     }
 
     private val locationListener = object: LocationListener {
         override fun onLocationChanged(location: Location?) {
-            Log.i("location", "location changed and location published" + "\r\n" + location)
+            Log.i("location", "location changed and location published\r\n$location")
             val locationJSON = JSONObject()
             locationJSON.put("latitude", location!!.latitude.toFloat())
             locationJSON.put("longitude", location!!.longitude.toFloat())
