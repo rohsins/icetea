@@ -52,10 +52,6 @@ class BackgroundService: Service() {
     private var viewOccupied = false
 
     private lateinit var locationManager: LocationManager
-    private var locationTimeCheck: Long = 0
-    private var locationLatitude: Float = 0f
-    private var locationLongitude: Float = 0f
-    private var locationAltitude: Float = 0f
 
     private inner class PopupRunnable: Runnable {
         private var textArg: String
@@ -133,9 +129,7 @@ class BackgroundService: Service() {
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-        if ((locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
-            && MainActivity.locationPermission) {
+        if (MainActivity.locationPermission) {
             Log.i("location", "requesting location")
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
@@ -311,52 +305,31 @@ class BackgroundService: Service() {
     private val locationListener = object: LocationListener {
         override fun onLocationChanged(location: Location?) {
             Log.i("location", "location changed and location published" + "\r\n" + location)
-            if (((location!!.time - locationTimeCheck) > 60000)
-                && ((location!!.latitude.toFloat() != locationLatitude)
-                    || location!!.longitude.toFloat() != locationLongitude)) {
-                locationTimeCheck = location!!.time
-                locationLatitude = location!!.latitude.toFloat()
-                locationLongitude = location!!.longitude.toFloat()
-                locationAltitude = location!!.altitude.toFloat()
-
-                val locationJSON = JSONObject()
-                locationJSON.put("latitude", locationLatitude)
-                locationJSON.put("longitude", locationLongitude)
-                locationJSON.put("altitude", locationAltitude)
-                val extraJSON = JSONObject()
-                extraJSON.put("location", locationJSON)
-                val essentialJSON = JSONObject()
-                essentialJSON.put("publisherudi", UDI)
-                essentialJSON.put("payloadType", "info")
-                val updateJSON = JSONObject()
-                updateJSON.put("essential", essentialJSON)
-                updateJSON.put("extra", extraJSON)
-                connectivity.mqttPublish(updateJSON.toString().toByteArray())
-            }
+            val locationJSON = JSONObject()
+            locationJSON.put("latitude", location!!.latitude.toFloat())
+            locationJSON.put("longitude", location!!.longitude.toFloat())
+            locationJSON.put("altitude", location!!.altitude.toFloat())
+            val extraJSON = JSONObject()
+            extraJSON.put("location", locationJSON)
+            val essentialJSON = JSONObject()
+            essentialJSON.put("publisherudi", UDI)
+            essentialJSON.put("payloadType", "info")
+            val updateJSON = JSONObject()
+            updateJSON.put("essential", essentialJSON)
+            updateJSON.put("extra", extraJSON)
+            connectivity.mqttPublish(updateJSON.toString().toByteArray())
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            Log.i("location", "status changed")
+            Log.i("location", "status changed\r\nprovider: $provider\r\nstatus: $status")
         }
 
         @SuppressLint("MissingPermission")
         override fun onProviderEnabled(provider: String?) {
-            if ((locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                        || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
-                && MainActivity.locationPermission) {
-                Log.i("location", "requesting location")
-                locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    60000L,
-                    5f,
-                    this
-                )
-            }
             Log.i("location", "provider enabled")
         }
 
         override fun onProviderDisabled(provider: String?) {
-            locationManager.removeUpdates(this)
             Log.i("location", "provider disabled")
         }
     }
