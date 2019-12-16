@@ -267,11 +267,13 @@ class BackgroundService: Service() {
                                 deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
                             }
                 )
-                var responseType = payload.getString("responseType")
-                var urgency = payload.getString("urgency")
-                var severity = payload.getString("severity")
-                var certainty = payload.getString("certainty")
-                var stringBuilder = "Response Type: $responseType\r\nUrgency: $urgency\r\nSeverity: $severity\r\nCertainty: $certainty"
+
+                val category = payload.getString("category")
+                val responseType = payload.getString("responseType")
+                val urgency = payload.getString("urgency")
+                val severity = payload.getString("severity")
+                val certainty = payload.getString("certainty")
+                val stringBuilder = "Category: $category\r\nResponse Type: $responseType\r\nUrgency: $urgency\r\nSeverity: $severity\r\nCertainty: $certainty"
 
                 popup(stringBuilder)
             }
