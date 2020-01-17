@@ -13,6 +13,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
@@ -48,6 +49,8 @@ class BackgroundService: Service() {
     private var viewOccupied = false
 
     private lateinit var locationManager: LocationManager
+
+    private lateinit var wakeLock: PowerManager.WakeLock
 
     private inner class PopupRunnable: Runnable {
         private var textArg: String
@@ -87,6 +90,7 @@ class BackgroundService: Service() {
                     linearLayout.removeAllViews()
                     windowManager.removeView(v)
                     viewOccupied = false
+                    releaseWakeLock()
                     true
                 }
                 if (!viewOccupied) {
@@ -124,6 +128,10 @@ class BackgroundService: Service() {
         frameLayout.background = getDrawable(R.drawable.popup_view)
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        wakeLock = (this.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock((PowerManager.FULL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE), "BackgroundService::WakeLock")
+        }
 
         if (MainActivity.locationPermission) {
             Log.i("location", "requesting location")
@@ -199,6 +207,20 @@ class BackgroundService: Service() {
         super.onTaskRemoved(rootIntent)
     }
 
+    private fun acquireWakeLock() {
+        if (!wakeLock.isHeld) {
+            wakeLock.acquire(10000)
+            Log.d("WakeLock", "wakelock acquired")
+        }
+    }
+
+    private fun releaseWakeLock() {
+        if (wakeLock.isHeld) {
+            wakeLock.release()
+            Log.d("WakeLock", "wakelock released")
+        }
+    }
+
     private fun infoNotificationNotify(id: Int, title: String, msg: String) {
         infoNotificationBuilder!!.setContentTitle(title)
         infoNotificationBuilder!!.setContentText(msg)
@@ -252,11 +274,26 @@ class BackgroundService: Service() {
                 )
             } else if (payloadType.contains("cap")) {
                 lateinit var title: String // = "Unknown"
+                val category = payload.getString("category")
+                val responseType = payload.getString("responseType")
+                val urgency = payload.getString("urgency")
+                val severity = payload.getString("severity")
+                val certainty = payload.getString("certainty")
+                val message = payload.getString("message")
+                val stringBuilder = "Category: $category\r\n" +
+                        "Response Type: $responseType\r\n" +
+                        "Urgency: $urgency\r\n" +
+                        "Severity: $severity\r\n" +
+                        "Certainty: $certainty\r\n" +
+                        "Message: $message"
+
                 try {
                     title = deviceDao.getDevice(jObject.getString("publisherudi")).type.capitalize().replace("Sensor", " Sensor")
                 } catch (e: Exception) {
                     title = deviceDao.getDevice(jObject.getString("subscriberudi")).type.capitalize().replace("Sensor", " Sensor")
                 }
+
+                acquireWakeLock()
                 infoNotificationNotify(
                     deviceDao.getDevice(jObject.getString("publisherudi")).id,
                     title,
@@ -267,14 +304,6 @@ class BackgroundService: Service() {
                                 deviceDao.getDeviceAlias(jObject.getString("subscriberudi"))
                             }
                 )
-
-                val category = payload.getString("category")
-                val responseType = payload.getString("responseType")
-                val urgency = payload.getString("urgency")
-                val severity = payload.getString("severity")
-                val certainty = payload.getString("certainty")
-                val stringBuilder = "Category: $category\r\nResponse Type: $responseType\r\nUrgency: $urgency\r\nSeverity: $severity\r\nCertainty: $certainty"
-
                 popup(stringBuilder)
             }
         } catch (e: Exception) {

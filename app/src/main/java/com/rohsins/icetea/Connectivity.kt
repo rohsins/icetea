@@ -61,7 +61,7 @@ class Connectivity : BroadcastReceiver() {
         if (sharedPreferences.getString("UDI", "null") != "null") {
             setUDI(sharedPreferences.getString("UDI", "null"))
         } else {
-            val processorID = Settings.Secure.getString(mqttApplicationContext!!.contentResolver, Settings.Secure.ANDROID_ID)
+            val processorID = Settings.Secure.getString(mqttApplicationContext!!.contentResolver, Settings.Secure.ANDROID_ID) + mqttApplicationContext!!.applicationInfo.packageName
             val queue = Volley.newRequestQueue(mqttApplicationContext)
             val url = "http://developer.wscada.net:88/api/device/register"
 
@@ -79,8 +79,8 @@ class Connectivity : BroadcastReceiver() {
                             putString("UDI", response.toString())
                             commit()
                         }
-                    } else {
-                    }
+                        UDI = response.toString()
+                    } else Log.d("VTAG", "error: $response")
                 },
                 Response.ErrorListener { error ->
                     error.printStackTrace()
@@ -259,7 +259,7 @@ class Connectivity : BroadcastReceiver() {
         }
         if (!mqttConfigured) {
             val brokerAddress = mqttURI
-            val clientId = Settings.Secure.getString(mqttContext!!.contentResolver, Settings.Secure.ANDROID_ID)
+            val clientId = Settings.Secure.getString(mqttContext!!.contentResolver, Settings.Secure.ANDROID_ID) + mqttApplicationContext!!.applicationInfo.packageName
             val persistence: MqttClientPersistence? = null
 
             connectOption.userName = mqttUserName
