@@ -79,7 +79,7 @@ class Connectivity : BroadcastReceiver() {
                             putString("UDI", response.toString())
                             commit()
                         }
-                        UDI = response.toString()
+                        setUDI(response.toString())
                     } else Log.d("VTAG", "error: $response")
                 },
                 Response.ErrorListener { error ->
