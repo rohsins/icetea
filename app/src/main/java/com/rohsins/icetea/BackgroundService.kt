@@ -241,7 +241,7 @@ class BackgroundService: Service() {
             val jObject = JSONObject(event.mqttMessage.toString())
             val payloadType = jObject.getString("payloadType")
             val payload = jObject.getJSONObject("payload")
-            if (payloadType.contains("alert")) {
+            if (payloadType.contains("alert") || payloadType.contains("info")) {
                 lateinit var title: String // = "Unknown"
                 try {
                     title = deviceDao.getDevice(jObject.getString("publisherudi")).type.capitalize().replace("Sensor", " Sensor")
@@ -279,13 +279,22 @@ class BackgroundService: Service() {
                 val urgency = payload.getString("urgency")
                 val severity = payload.getString("severity")
                 val certainty = payload.getString("certainty")
-                val message = payload.getString("message")
-                val stringBuilder = "Category: $category\r\n" +
+                val senderName = payload.getString("senderName")
+                val headline = payload.getString("headline")
+                val contact = payload.getString("contact")
+                val description = payload.getString("description")
+                val instruction = payload.getString("instruction")
+                val stringBuilder =
+                        "Headline: $headline\r\n" +
+                        "Category: $category\r\n" +
                         "Response Type: $responseType\r\n" +
                         "Urgency: $urgency\r\n" +
                         "Severity: $severity\r\n" +
                         "Certainty: $certainty\r\n" +
-                        "Message: $message"
+                        "Description: $description\r\n" +
+                        "Instruction: $instruction\r\n" +
+                        "Sender: $senderName\r\n" +
+                        "Contact: $contact\r\n"
 
                 try {
                     title = deviceDao.getDevice(jObject.getString("publisherudi")).type.capitalize().replace("Sensor", " Sensor")
@@ -297,7 +306,7 @@ class BackgroundService: Service() {
                 infoNotificationNotify(
                     deviceDao.getDevice(jObject.getString("publisherudi")).id,
                     title,
-                    payload.getString("message") + " @ " +
+                    "$headline @ " +
                             try {
                                 deviceDao.getDeviceAlias(jObject.getString("publisherudi"))
                             } catch (e: Exception) {
